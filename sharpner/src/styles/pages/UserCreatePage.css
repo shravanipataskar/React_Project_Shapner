@@ -21,12 +21,12 @@ body:has(.user-create),
 }
 
 .sharpner-dashboard.user-create .dashboard-sidebar {
-  width: clamp(203px, 18.3vw, 291px);
+  width: var(--dashboard-sidebar-width);
 }
 
 .sharpner-dashboard.user-create .dashboard-main {
-  width: calc(100% - clamp(203px, 18.3vw, 291px));
-  margin-left: clamp(203px, 18.3vw, 291px);
+  width: calc(100% - var(--dashboard-sidebar-width));
+  margin-left: var(--dashboard-sidebar-width);
   padding: 42px 40px 30px;
 }
 

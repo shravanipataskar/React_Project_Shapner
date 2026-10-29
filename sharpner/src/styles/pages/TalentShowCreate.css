@@ -313,85 +313,85 @@
   min-height: 34px;
 }
 
-@media (min-width: 701px) {
+@media (min-width: 851px) {
   .sharpner-dashboard.talent-show-edit-admin .talent-show-create-main {
-    width: calc(100% - clamp(140px, 18.3vw, 350px));
-    margin-left: clamp(140px, 18.3vw, 350px);
+    width: calc(100% - var(--dashboard-sidebar-width));
+    margin-left: var(--dashboard-sidebar-width);
     padding: clamp(24px, 3.08vw, 60px) clamp(18px, 3vw, 58px) 30px
       clamp(18px, 2.58vw, 50px);
   }
 
   .sharpner-dashboard.talent-show-edit-admin .dashboard-sidebar {
-    width: clamp(140px, 18.3vw, 350px);
+    width: var(--dashboard-sidebar-width);
     transform: none;
     transition: none;
   }
 
   .sharpner-dashboard.talent-show-edit-admin .dashboard-sidebar-brand {
-    height: clamp(76px, 9vw, 173px);
+    height: 112px;
   }
 
   .sharpner-dashboard.talent-show-edit-admin .dashboard-sidebar-brand a {
-    font-size: clamp(14px, 1.35vw, 26px);
+    font-size: 22px;
   }
 
   .sharpner-dashboard.talent-show-edit-admin .dashboard-navigation {
-    padding: 0 clamp(10px, 1.3vw, 25px) 25px;
+    padding: 12px 18px 25px;
   }
 
   .sharpner-dashboard.talent-show-edit-admin .dashboard-nav-link {
-    min-height: clamp(30px, 3.13vw, 56px);
-    padding: 8px clamp(6px, 0.8vw, 12px);
-    gap: clamp(4px, 0.6vw, 9px);
-    font-size: clamp(11px, 0.95vw, 18px);
+    min-height: 45px;
+    padding: 11px 12px;
+    gap: 9px;
+    font-size: 14px;
   }
 
   .sharpner-dashboard.talent-show-edit-admin .dashboard-nav-icon {
-    width: clamp(12px, 1.05vw, 16px);
-    font-size: clamp(14px, 1.32vw, 20px);
+    width: 16px;
+    font-size: 20px;
   }
 
   .sharpner-dashboard.talent-show-edit-admin .dashboard-signout {
-    width: calc(100% - clamp(20px, 2.4vw, 36px));
-    min-height: clamp(36px, 3.7vw, 56px);
-    margin: clamp(20px, 2.44vw, 37px) auto 0;
-    padding: 8px;
-    gap: clamp(5px, 0.8vw, 12px);
-    font-size: clamp(11px, 1.05vw, 16px);
+    width: calc(100% - 36px);
+    min-height: 49px;
+    margin: 37px 18px 0;
+    padding: 12px;
+    gap: 12px;
+    font-size: 14px;
   }
 }
 
 @media (min-width: 851px) {
   .sharpner-dashboard.talent-show-create-admin .talent-show-create-main {
-    width: calc(100% - clamp(203px, 18.15vw, 350px));
-    margin-left: clamp(203px, 18.15vw, 350px);
+    width: calc(100% - var(--dashboard-sidebar-width));
+    margin-left: var(--dashboard-sidebar-width);
     padding: clamp(42px, 3.08vw, 60px) clamp(36px, 3vw, 58px)
       30px clamp(36px, 2.58vw, 50px);
   }
 
   .sharpner-dashboard.talent-show-create-admin .dashboard-sidebar {
-    width: clamp(203px, 18.15vw, 350px);
+    width: var(--dashboard-sidebar-width);
     transform: none;
     transition: none;
   }
 
   .sharpner-dashboard.talent-show-create-admin .dashboard-sidebar-brand {
-    height: clamp(100px, 9vw, 173px);
+    height: 112px;
   }
 
   .sharpner-dashboard.talent-show-create-admin .dashboard-sidebar-brand a {
-    font-size: clamp(18px, 1.35vw, 26px);
+    font-size: 22px;
   }
 
   .sharpner-dashboard.talent-show-create-admin .dashboard-navigation {
-    padding: 0 clamp(14px, 1.3vw, 25px) 25px;
+    padding: 12px 18px 25px;
   }
 
   .sharpner-dashboard.talent-show-create-admin .dashboard-nav-link {
-    min-height: clamp(40px, 3.13vw, 56px);
+    min-height: 45px;
     gap: 9px;
     padding: 11px 12px;
-    font-size: clamp(14px, 0.95vw, 18px);
+    font-size: 14px;
   }
 
   .sharpner-dashboard.talent-show-create-admin .dashboard-nav-icon {
@@ -401,7 +401,7 @@
 
   .sharpner-dashboard.talent-show-create-admin .dashboard-signout {
     width: calc(100% - 36px);
-    min-height: 56px;
+    min-height: 49px;
     margin: 37px 18px 0;
     padding: 12px;
     gap: 12px;

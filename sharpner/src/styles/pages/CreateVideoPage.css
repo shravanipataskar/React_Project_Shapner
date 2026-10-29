@@ -52,7 +52,7 @@ body:has(.sharpner-create-video),
   left: 0;
   z-index: 1000;
 
-  width: 280px;
+  width: var(--admin-sidebar-width);
   min-height: 100vh;
   overflow-y: auto;
 
@@ -61,7 +61,7 @@ body:has(.sharpner-create-video),
 }
 
 .create-video-sidebar-brand {
-  height: 124px;
+  height: 112px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,14 +69,14 @@ body:has(.sharpner-create-video),
 
 .create-video-sidebar-brand a {
   color: #ffffff;
-  font-size: 23px;
+  font-size: 22px;
   font-weight: 900;
   letter-spacing: 1.5px;
   text-decoration: none;
 }
 
 .create-video-navigation {
-  padding: 12px 20px 28px;
+  padding: 12px 18px 25px;
 }
 
 .create-video-nav-link {
@@ -84,15 +84,15 @@ body:has(.sharpner-create-video),
   align-items: center;
   gap: 9px;
 
-  min-height: 49px;
+  min-height: 45px;
   margin-bottom: 1px;
-  padding: 12px 13px;
+  padding: 11px 12px;
 
   border-left: 3px solid transparent;
   border-radius: 5px;
 
   color: #111111;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   text-decoration: none;
 
@@ -100,12 +100,13 @@ body:has(.sharpner-create-video),
 }
 
 .create-video-nav-link:hover {
-  background: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .create-video-nav-active {
   border-left-color: rgba(100, 75, 0, 0.65);
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
+  color: #725c00;
 }
 
 .create-video-nav-icon {
@@ -117,7 +118,7 @@ body:has(.sharpner-create-video),
   flex-shrink: 0;
 
   color: #ffffff;
-  font-size: 21px;
+  font-size: 20px;
   line-height: 1;
 }
 
@@ -128,14 +129,14 @@ body:has(.sharpner-create-video),
   gap: 12px;
 
   width: calc(100% - 36px);
-  min-height: 56px;
-  margin: 40px 18px 0;
+  min-height: 49px;
+  margin: 37px 18px 0;
   padding: 12px;
 
   border: none;
   border-radius: 9px;
 
-  background: #dc2940;
+  background: #d92e43;
   box-shadow: 0 4px 12px rgba(150, 0, 0, 0.12);
 
   color: #ffffff;
@@ -145,11 +146,11 @@ body:has(.sharpner-create-video),
 }
 
 .create-video-signout:hover {
-  background: #bd2035;
+  background: #d92e43;
 }
 
 .create-video-signout span {
-  font-size: 21px;
+  font-size: 20px;
 }
 
 /* ========================================
@@ -157,11 +158,11 @@ body:has(.sharpner-create-video),
 ======================================== */
 
 .create-video-main {
-  width: calc(100% - 280px);
+  width: calc(100% - var(--admin-sidebar-width));
   min-width: 0;
   min-height: 100vh;
 
-  margin-left: 280px;
+  margin-left: var(--admin-sidebar-width);
   padding: 48px 40px 40px;
 
   background: var(--create-black);
@@ -367,7 +368,7 @@ body:has(.sharpner-create-video),
 
 @media (max-width: 850px) {
   .create-video-sidebar {
-    width: 260px;
+    width: 235px;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
   }

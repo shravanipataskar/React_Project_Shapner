@@ -46,12 +46,12 @@
 
 @media (min-width: 851px) {
   .sharpner-dashboard.users-admin .dashboard-sidebar {
-    width: clamp(203px, 18.3vw, 291px);
+    width: var(--dashboard-sidebar-width);
   }
 
   .sharpner-dashboard.users-admin .dashboard-main {
-    width: calc(100% - clamp(203px, 18.3vw, 291px));
-    margin-left: clamp(203px, 18.3vw, 291px);
+    width: calc(100% - var(--dashboard-sidebar-width));
+    margin-left: var(--dashboard-sidebar-width);
     padding: 42px 41px 30px;
   }
 

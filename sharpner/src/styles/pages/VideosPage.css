@@ -58,7 +58,7 @@ body:has(.sharpner-videos-page),
   left: 0;
   z-index: 1000;
 
-  width: clamp(253px, 18.25vw, 272px);
+  width: var(--admin-sidebar-width);
   min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
@@ -68,7 +68,7 @@ body:has(.sharpner-videos-page),
 }
 
 .videos-sidebar-brand {
-  height: 124px;
+  height: 112px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,13 +77,13 @@ body:has(.sharpner-videos-page),
 .videos-sidebar-brand a {
   color: #ffffff;
   text-decoration: none;
-  font-size: 23px;
+  font-size: 22px;
   font-weight: 900;
   letter-spacing: 1.5px;
 }
 
 .videos-navigation {
-  padding: 12px 20px 28px;
+  padding: 12px 18px 25px;
 }
 
 .videos-nav-link {
@@ -92,15 +92,15 @@ body:has(.sharpner-videos-page),
   gap: 9px;
 
   position: relative;
-  min-height: 49px;
+  min-height: 45px;
   margin-bottom: 1px;
-  padding: 12px 13px;
+  padding: 11px 12px;
 
   border-radius: 5px;
   border-left: 3px solid transparent;
 
   color: #111111;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   text-decoration: none;
 
@@ -110,13 +110,14 @@ body:has(.sharpner-videos-page),
 }
 
 .videos-nav-link:hover {
-  background: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.35);
   color: #000000;
 }
 
 .videos-nav-active {
   border-left-color: rgba(100, 75, 0, 0.65);
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
+  color: #725c00;
 }
 
 .videos-nav-icon {
@@ -128,7 +129,7 @@ body:has(.sharpner-videos-page),
   flex-shrink: 0;
 
   color: #ffffff;
-  font-size: 21px;
+  font-size: 20px;
   line-height: 1;
 }
 
@@ -141,14 +142,14 @@ body:has(.sharpner-videos-page),
   gap: 12px;
 
   width: calc(100% - 36px);
-  min-height: 56px;
-  margin: 40px 18px 0;
+  min-height: 49px;
+  margin: 37px 18px 0;
   padding: 12px;
 
   border: none;
   border-radius: 9px;
 
-  background: #dc2940;
+  background: #d92e43;
   box-shadow: 0 4px 12px rgba(150, 0, 0, 0.12);
 
   color: #ffffff;
@@ -160,11 +161,11 @@ body:has(.sharpner-videos-page),
 }
 
 .videos-signout:hover {
-  background: #bd2035;
+  background: #d92e43;
 }
 
 .videos-signout-icon {
-  font-size: 21px;
+  font-size: 20px;
 }
 
 /* ========================================
@@ -172,11 +173,11 @@ body:has(.sharpner-videos-page),
 ======================================== */
 
 .videos-main {
-  width: calc(100% - clamp(253px, 18.25vw, 272px));
+  width: calc(100% - var(--admin-sidebar-width));
   min-width: 0;
   min-height: 100vh;
 
-  margin-left: clamp(253px, 18.25vw, 272px);
+  margin-left: var(--admin-sidebar-width);
   padding: 40px clamp(36px, 2.9vw, 46px) 40px clamp(33px, 2.62vw, 39px);
 
   background: var(--videos-black);
@@ -863,7 +864,7 @@ body:has(.sharpner-videos-page),
 
 @media (max-width: 850px) {
   .videos-sidebar {
-    width: 260px;
+    width: 235px;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
   }

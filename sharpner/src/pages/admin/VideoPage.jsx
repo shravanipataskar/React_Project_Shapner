@@ -1,20 +1,12 @@
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { videosApi } from "../../services/api";
+import {
+  adminNavigationItems,
+  isAdminNavigationItemActive,
+} from "../../components/layout/adminNavigation.js";
 import "../../styles/pages/VideosPage.css";
-
-const navigationItems = [
-  { icon: "▦", label: "Dashboard", path: "/dashboard" },
-  { icon: "▣", label: "Videos & Shorts", path: "/admin/videos" },
-  { icon: "☻", label: "Auditions", path: "/admin/auditions" },
-  { icon: "⊕", label: "Dhol Pathak", path: "/admin/dhol-pathak" },
-  { icon: "☆", label: "Talent Show", path: "/admin/talent-shows" },
-  { icon: "ⓘ", label: "Creative Ideas", path: "/admin/creative-ideas" },
-  { icon: "♙", label: "Brand Deals", path: "/admin/brand-deals" },
-  { icon: "▤", label: "Tickets", path: "/admin/tickets" },
-  { icon: "♧", label: "Users", path: "/admin/users" },
-];
 
 export default function VideosPage() {
   const location = useLocation();
@@ -190,23 +182,24 @@ export default function VideosPage() {
         </div>
 
         <nav className="videos-navigation">
-          {navigationItems.map((item) => {
-            const isActive =
-              item.path === "/admin/videos" &&
-              location.pathname.startsWith("/admin/videos");
-
+          {adminNavigationItems.map((item) => {
             return (
-              <Link
+              <NavLink
                 key={item.label}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`videos-nav-link ${
-                  isActive ? "videos-nav-active" : ""
-                }`}
+                className={({ isActive }) =>
+                  `videos-nav-link ${
+                    isActive ||
+                    isAdminNavigationItemActive(item, location.pathname)
+                      ? "videos-nav-active"
+                      : ""
+                  }`
+                }
               >
                 <span className="videos-nav-icon">{item.icon}</span>
                 <span>{item.label}</span>
-              </Link>
+              </NavLink>
             );
           })}
 

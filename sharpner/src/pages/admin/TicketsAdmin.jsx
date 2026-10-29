@@ -1,31 +1,167 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/TicketsAdmin.css'
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
+
 function TicketsAdmin() {
   const { pathname } = useLocation()
-  const statusFilter = pathname.endsWith('/inactive') ? 'inactive' : 'active'
-  const [tickets] = useState([])
+
+  const statusFilter = pathname.endsWith('/inactive')
+    ? 'inactive'
+    : 'active'
+
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
   const [searchText, setSearchText] = useState('')
   const [search, setSearch] = useState('')
   const [moduleFilter, setModuleFilter] = useState('')
   const [overallStatusFilter, setOverallStatusFilter] = useState('')
 
+  // ---------------------------------------------------------
+  // FETCH TICKETS FROM LARAVEL
+  // ---------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchTickets() {
+      try {
+        setLoading(true)
+        setError('')
+
+        const response = await fetch(`${API_BASE_URL}/tickets`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch tickets. HTTP ${response.status}`,
+          )
+        }
+
+        const result = await response.json()
+
+        console.log('Tickets API response:', result)
+
+        if (!result.success) {
+          throw new Error(
+            result.message || 'Failed to fetch tickets.',
+          )
+        }
+
+        const apiTickets = Array.isArray(result.data)
+          ? result.data
+          : []
+
+        // Convert Laravel snake_case fields
+        // into the names used by this React page.
+        const formattedTickets = apiTickets.map((ticket) => ({
+          id: ticket.id,
+
+          ticketNo: ticket.ticket_no,
+          subject: ticket.subject,
+
+          application: ticket.application_id,
+          module: ticket.module_id,
+
+          category: ticket.category,
+
+          // Database field: ticket_status
+          status: ticket.ticket_status,
+
+          // Database field: status
+          active: Number(ticket.status) === 1,
+
+          description: ticket.description,
+          userId: ticket.user_id,
+          attachment: ticket.attachment,
+
+          createdAt: ticket.created_at,
+          updatedAt: ticket.updated_at,
+        }))
+
+        if (!cancelled) {
+          setTickets(formattedTickets)
+        }
+      } catch (err) {
+        console.error('Tickets fetch error:', err)
+
+        if (!cancelled) {
+          setError(
+            err?.message || 'Unable to load tickets.',
+          )
+          setTickets([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchTickets()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // ---------------------------------------------------------
+  // MODULE OPTIONS
+  // ---------------------------------------------------------
+  const moduleOptions = useMemo(() => {
+    const modules = tickets
+      .map((ticket) => ticket.module)
+      .filter(
+        (module) =>
+          module !== null &&
+          module !== undefined &&
+          module !== '',
+      )
+
+    return [...new Set(modules)]
+  }, [tickets])
+
+  // ---------------------------------------------------------
+  // FILTER TICKETS
+  // ---------------------------------------------------------
   const visibleTickets = useMemo(() => {
-    const query = search.toLowerCase()
+    const query = search.trim().toLowerCase()
 
     return tickets.filter((ticket) => {
       const active = ticket.active !== false
-      const matchesActive = active === (statusFilter === 'active')
-      const matchesQuery = [ticket.ticketNo, ticket.subject].some((value) =>
-        String(value ?? '').toLowerCase().includes(query),
-      )
+
+      const matchesActive =
+        active === (statusFilter === 'active')
+
+      const matchesQuery =
+        !query ||
+        [
+          ticket.ticketNo,
+          ticket.subject,
+          ticket.module,
+          ticket.category,
+        ].some((value) =>
+          String(value ?? '')
+            .toLowerCase()
+            .includes(query),
+        )
+
       const matchesModule =
-        !moduleFilter || ticket.module === moduleFilter
+        !moduleFilter ||
+        String(ticket.module) === String(moduleFilter)
+
       const matchesOverallStatus =
-        !overallStatusFilter || ticket.status === overallStatusFilter
+        !overallStatusFilter ||
+        ticket.status === overallStatusFilter
 
       return (
         matchesActive &&
@@ -34,13 +170,28 @@ function TicketsAdmin() {
         matchesOverallStatus
       )
     })
-  }, [tickets, search, statusFilter, moduleFilter, overallStatusFilter])
+  }, [
+    tickets,
+    search,
+    statusFilter,
+    moduleFilter,
+    overallStatusFilter,
+  ])
 
+  // ---------------------------------------------------------
+  // SEARCH
+  // ---------------------------------------------------------
   function submitSearch(event) {
     event.preventDefault()
-    setSearch(searchText.trim().toLowerCase())
+
+    setSearch(
+      searchText.trim().toLowerCase(),
+    )
   }
 
+  // ---------------------------------------------------------
+  // RESET
+  // ---------------------------------------------------------
   function resetFilters() {
     setSearchText('')
     setSearch('')
@@ -50,82 +201,178 @@ function TicketsAdmin() {
 
   return (
     <AdminLayout
-      pageClass={`tickets-admin${statusFilter === 'inactive' ? ' is-inactive' : ''}`}
+      pageClass={`tickets-admin${
+        statusFilter === 'inactive'
+          ? ' is-inactive'
+          : ''
+      }`}
     >
       <main className="dashboard-main tickets-main">
+
+        {/* -------------------------------------------------
+            HEADER
+        ------------------------------------------------- */}
         <header className="tickets-header">
           <h1>
-            <span aria-hidden="true">
-              🎫
-            </span>
-            {statusFilter === 'inactive' ? 'Inactive Tickets' : 'Manage Tickets'}
+            <span aria-hidden="true">🎫</span>
+
+            {statusFilter === 'inactive'
+              ? 'Inactive Tickets'
+              : 'Manage Tickets'}
           </h1>
-          <div className="tickets-toolbar" aria-label="Ticket actions">
+
+          <div
+            className="tickets-toolbar"
+            aria-label="Ticket actions"
+          >
             <Link
-              className={`talent-show-button talent-show-button-active${statusFilter === 'active' ? ' is-selected' : ''}`}
+              className={`talent-show-button talent-show-button-active${
+                statusFilter === 'active'
+                  ? ' is-selected'
+                  : ''
+              }`}
               to="/admin/tickets"
-              aria-current={statusFilter === 'active' ? 'page' : undefined}
+              aria-current={
+                statusFilter === 'active'
+                  ? 'page'
+                  : undefined
+              }
             >
               ✅ Active
             </Link>
+
             <Link
-              className={`talent-show-button talent-show-button-inactive${statusFilter === 'inactive' ? ' is-selected' : ''}`}
+              className={`talent-show-button talent-show-button-inactive${
+                statusFilter === 'inactive'
+                  ? ' is-selected'
+                  : ''
+              }`}
               to="/admin/tickets/inactive"
-              aria-current={statusFilter === 'inactive' ? 'page' : undefined}
+              aria-current={
+                statusFilter === 'inactive'
+                  ? 'page'
+                  : undefined
+              }
             >
               ⏸ Inactive
             </Link>
-            {statusFilter === 'active' && <Link
-              className="talent-show-button talent-show-button-add"
-              to="/admin/tickets/create"
-            >
-              ➕ Raise Ticket
-            </Link>}
+
+            {statusFilter === 'active' && (
+              <Link
+                className="talent-show-button talent-show-button-add"
+                to="/admin/tickets/create"
+              >
+                ➕ Raise Ticket
+              </Link>
+            )}
           </div>
         </header>
 
-        <section className="talent-show-card tickets-card" aria-label="Tickets">
+        {/* -------------------------------------------------
+            CARD
+        ------------------------------------------------- */}
+        <section
+          className="talent-show-card tickets-card"
+          aria-label="Tickets"
+        >
+
+          {/* -------------------------------------------------
+              SEARCH / FILTERS
+          ------------------------------------------------- */}
           <form
             className="talent-show-search tickets-search"
             onSubmit={submitSearch}
             role="search"
           >
-            <label className="talent-show-sr-only" htmlFor="tickets-search">
+            <label
+              className="talent-show-sr-only"
+              htmlFor="tickets-search"
+            >
               Search by ticket number or subject
             </label>
+
             <input
               id="tickets-search"
               type="search"
               placeholder="Search by ticket no, subject, module..."
               value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
+              onChange={(event) =>
+                setSearchText(event.target.value)
+              }
             />
-            <label className="talent-show-sr-only" htmlFor="tickets-module">
+
+            <label
+              className="talent-show-sr-only"
+              htmlFor="tickets-module"
+            >
               Filter by module
             </label>
+
             <select
               id="tickets-module"
               value={moduleFilter}
-              onChange={(event) => setModuleFilter(event.target.value)}
+              onChange={(event) =>
+                setModuleFilter(event.target.value)
+              }
             >
-              <option value="">Select Module</option>
+              <option value="">
+                Select Module
+              </option>
+
+              {moduleOptions.map((moduleId) => (
+                <option
+                  key={moduleId}
+                  value={moduleId}
+                >
+                  Module {moduleId}
+                </option>
+              ))}
             </select>
-            <label className="talent-show-sr-only" htmlFor="tickets-overall-status">
+
+            <label
+              className="talent-show-sr-only"
+              htmlFor="tickets-overall-status"
+            >
               Filter by overall status
             </label>
+
             <select
               id="tickets-overall-status"
               value={overallStatusFilter}
-              onChange={(event) => setOverallStatusFilter(event.target.value)}
+              onChange={(event) =>
+                setOverallStatusFilter(
+                  event.target.value,
+                )
+              }
             >
-              <option value="">Overall Status</option>
+              <option value="">
+                Overall Status
+              </option>
+
+              <option value="Open">
+                Open
+              </option>
+
+              <option value="In Progress">
+                In Progress
+              </option>
+
+              <option value="Resolved">
+                Resolved
+              </option>
+
+              <option value="Closed">
+                Closed
+              </option>
             </select>
+
             <button
               type="submit"
               className="talent-show-button talent-show-button-search"
             >
               🔍 Search
             </button>
+
             <button
               type="button"
               className="talent-show-button talent-show-button-reset"
@@ -135,72 +382,172 @@ function TicketsAdmin() {
             </button>
           </form>
 
+          {/* -------------------------------------------------
+              ERROR
+          ------------------------------------------------- */}
+          {error && (
+            <div
+              style={{
+                padding: '15px',
+                marginBottom: '15px',
+                color: '#b00020',
+                background: '#ffe5e5',
+                borderRadius: '8px',
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {/* -------------------------------------------------
+              TABLE
+          ------------------------------------------------- */}
           <div className="talent-show-table-scroll tickets-table-scroll">
             <table className="talent-show-table tickets-table">
+
               <thead>
                 <tr>
-                  <th scope="col">Ticket No</th>
-                  <th scope="col">Subject</th>
-                  <th scope="col">Application</th>
-                  <th scope="col">Module</th>
-                  <th scope="col">Category</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col">
+                    Ticket No
+                  </th>
+
+                  <th scope="col">
+                    Subject
+                  </th>
+
+                  <th scope="col">
+                    Application
+                  </th>
+
+                  <th scope="col">
+                    Module
+                  </th>
+
+                  <th scope="col">
+                    Category
+                  </th>
+
+                  <th scope="col">
+                    Status
+                  </th>
+
+                  <th scope="col">
+                    Actions
+                  </th>
                 </tr>
               </thead>
+
               <tbody>
-                {visibleTickets.length === 0 ? (
+
+                {/* LOADING */}
+                {loading ? (
                   <tr>
-                    <td className="talent-show-empty" colSpan="7">
+                    <td
+                      className="talent-show-empty"
+                      colSpan="7"
+                    >
+                      Loading tickets...
+                    </td>
+                  </tr>
+                ) : visibleTickets.length === 0 ? (
+
+                  /* NO DATA */
+                  <tr>
+                    <td
+                      className="talent-show-empty"
+                      colSpan="7"
+                    >
                       No tickets found.
                     </td>
                   </tr>
+
                 ) : (
+
+                  /* DATA */
                   visibleTickets.map((ticket) => (
                     <tr key={ticket.id}>
-                      <td>{ticket.ticketNo}</td>
-                      <td>{ticket.subject}</td>
-                      <td>{ticket.application}</td>
-                      <td>{ticket.module}</td>
+
+                      <td>
+                        {ticket.ticketNo}
+                      </td>
+
+                      <td>
+                        {ticket.subject}
+                      </td>
+
+                      <td>
+                        Application {ticket.application}
+                      </td>
+
+                      <td>
+                        Module {ticket.module}
+                      </td>
+
                       <td>
                         <span className="tickets-category">
                           {ticket.category}
                         </span>
                       </td>
+
                       <td>
-                        <span className="tickets-status">{ticket.status}</span>
+                        <span className="tickets-status">
+                          {ticket.status}
+                        </span>
                       </td>
+
                       <td>
                         <div className="talent-show-row-actions">
+
                           <button
                             type="button"
                             className="talent-show-button talent-show-button-view"
-                            disabled
+                            onClick={() =>
+                              console.log(
+                                'View ticket:',
+                                ticket,
+                              )
+                            }
                           >
                             View
                           </button>
+
                           <button
                             type="button"
                             className="talent-show-button talent-show-button-edit"
-                            disabled
+                            onClick={() =>
+                              console.log(
+                                'Edit ticket:',
+                                ticket,
+                              )
+                            }
                           >
                             Edit
                           </button>
+
                           <button
                             type="button"
                             className="talent-show-button talent-show-button-deactivate"
-                            disabled
+                            onClick={() =>
+                              console.log(
+                                'Deactivate ticket:',
+                                ticket,
+                              )
+                            }
                           >
                             Deactivate
                           </button>
+
                         </div>
                       </td>
+
                     </tr>
                   ))
                 )}
+
               </tbody>
             </table>
           </div>
+
         </section>
       </main>
     </AdminLayout>

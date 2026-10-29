@@ -5,12 +5,12 @@
 
 @media (min-width: 1201px) {
   .sharpner-dashboard.talent-show-admin .dashboard-sidebar {
-    width: 265px;
+    width: var(--dashboard-sidebar-width);
   }
 
   .sharpner-dashboard.talent-show-admin .dashboard-main {
-    width: calc(100% - 265px);
-    margin-left: 265px;
+    width: calc(100% - var(--dashboard-sidebar-width));
+    margin-left: var(--dashboard-sidebar-width);
     padding: 38px;
   }
 }
@@ -95,12 +95,12 @@
 
 @media (min-width: 851px) {
   .sharpner-dashboard.talent-show-admin.is-inactive .dashboard-sidebar {
-    width: clamp(203px, 18.2vw, 350px);
+    width: var(--dashboard-sidebar-width);
   }
 
   .sharpner-dashboard.talent-show-admin.is-inactive .dashboard-main {
-    width: calc(100% - clamp(203px, 18.2vw, 350px));
-    margin-left: clamp(203px, 18.2vw, 350px);
+    width: calc(100% - var(--dashboard-sidebar-width));
+    margin-left: var(--dashboard-sidebar-width);
     padding: clamp(38px, 2.82vw, 54px) clamp(36px, 3.7vw, 60px) 30px
       clamp(36px, 2.48vw, 45px);
   }

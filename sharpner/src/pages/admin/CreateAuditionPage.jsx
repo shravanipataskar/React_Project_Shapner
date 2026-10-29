@@ -1,19 +1,11 @@
 
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import {
+  adminNavigationItems,
+  isAdminNavigationItemActive,
+} from "../../components/layout/adminNavigation.js";
 import "../../styles/pages/CreateAuditionPage.css";
-
-const navigationItems = [
-  { icon: "▦", label: "Dashboard", path: "/dashboard" },
-  { icon: "▣", label: "Videos & Shorts", path: "/admin/videos" },
-  { icon: "☻", label: "Auditions", path: "/admin/auditions" },
-  { icon: "⊕", label: "Dhol Pathak", path: "/admin/dhol-pathak" },
-  { icon: "☆", label: "Talent Show", path: "/admin/talent-shows" },
-  { icon: "ⓘ", label: "Creative Ideas", path: "/admin/creative-ideas" },
-  { icon: "♙", label: "Brand Deals", path: "/admin/brand-deals" },
-  { icon: "▤", label: "Tickets", path: "/admin/tickets" },
-  { icon: "♧", label: "Users", path: "/admin/users" },
-];
 
 const Section = ({ title, children }) => (
   <section className="audition-form-section">
@@ -123,6 +115,7 @@ const getLocalDate = () => {
 
 export default function CreateAuditionPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -253,20 +246,22 @@ export default function CreateAuditionPage() {
         </div>
 
         <nav className="audition-navigation">
-          {navigationItems.map((item) => (
-            <Link
+          {adminNavigationItems.map((item) => (
+            <NavLink
               key={item.label}
               to={item.path}
               onClick={() => setSidebarOpen(false)}
-              className={`audition-nav-link ${
-                item.path === "/admin/auditions"
-                  ? "audition-nav-active"
-                  : ""
-              }`}
+              className={({ isActive }) =>
+                `audition-nav-link ${
+                  isActive || isAdminNavigationItemActive(item, pathname)
+                    ? "audition-nav-active"
+                    : ""
+                }`
+              }
             >
               <span className="audition-nav-icon">{item.icon}</span>
               {item.label}
-            </Link>
+            </NavLink>
           ))}
 
           <button

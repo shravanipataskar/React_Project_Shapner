@@ -1,22 +1,15 @@
 
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import {
+  adminNavigationItems,
+  isAdminNavigationItemActive,
+} from "../../components/layout/adminNavigation.js";
 import "../../styles/pages/CreateVideoPage.css";
-
-const navigationItems = [
-  { icon: "▦", label: "Dashboard", path: "/dashboard" },
-  { icon: "▣", label: "Videos & Shorts", path: "/admin/videos" },
-  { icon: "☻", label: "Auditions", path: "/admin/auditions" },
-  { icon: "⊕", label: "Dhol Pathak", path: "/admin/dhol-pathak" },
-  { icon: "☆", label: "Talent Show", path: "/admin/talent-shows" },
-  { icon: "ⓘ", label: "Creative Ideas", path: "/admin/creative-ideas" },
-  { icon: "♙", label: "Brand Deals", path: "/admin/brand-deals" },
-  { icon: "▤", label: "Tickets", path: "/admin/tickets" },
-  { icon: "♧", label: "Users", path: "/admin/users" },
-];
 
 export default function CreateVideoPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const [formData, setFormData] = useState({
     videoUrl: "",
@@ -83,20 +76,22 @@ export default function CreateVideoPage() {
         </div>
 
         <nav className="create-video-navigation">
-          {navigationItems.map((item) => (
-            <Link
+          {adminNavigationItems.map((item) => (
+            <NavLink
               key={item.label}
               to={item.path}
-              className={`create-video-nav-link ${
-                item.path === "/admin/videos"
-                  ? "create-video-nav-active"
-                  : ""
-              }`}
+              className={({ isActive }) =>
+                `create-video-nav-link ${
+                  isActive || isAdminNavigationItemActive(item, pathname)
+                    ? "create-video-nav-active"
+                    : ""
+                }`
+              }
               onClick={() => setSidebarOpen(false)}
             >
               <span className="create-video-nav-icon">{item.icon}</span>
               <span>{item.label}</span>
-            </Link>
+            </NavLink>
           ))}
 
           <button
@@ -184,4 +179,3 @@ export default function CreateVideoPage() {
     </div>
   );
 }
-

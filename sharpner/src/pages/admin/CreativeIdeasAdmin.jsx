@@ -1,261 +1,438 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { downloadCsv } from '../../utils/downloadCsv.js'
 import { downloadPdf } from '../../utils/downloadPdf.js'
+
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CreativeIdeasAdmin.css'
 
-const apiUrl = import.meta.env.VITE_CREATIVE_IDEAS_API
-const perPage = 10
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 
-function firstValue(record, ...keys) {
-  const key = keys.find((candidate) => record[candidate] !== undefined)
-  return key ? record[key] : ''
-}
+const API_URL = `${API_BASE_URL}/creative-ideas`
+
+const PER_PAGE = 10
 
 function normalizeIdea(record) {
-  const rawActive = firstValue(record, 'is_active', 'active', 'isActive')
-  const statusValue = record.status
-  const activeValue =
-    rawActive ??
-    (typeof statusValue === 'string' &&
-    ['active', 'inactive', 'disabled'].includes(statusValue.toLowerCase())
-      ? statusValue
-      : undefined)
-  const active =
-    typeof activeValue === 'string'
-      ? !['inactive', 'disabled', '0', 'false'].includes(
-          activeValue.toLowerCase(),
-        )
-      : activeValue === undefined
-        ? true
-        : Boolean(activeValue)
-
   return {
     ...record,
+
     id: record.id,
-    name: firstValue(record, 'name', 'submitter_name', 'full_name'),
-    reelIdea: firstValue(record, 'reel_idea', 'reelIdea', 'idea'),
-    reviewStatus: firstValue(
-      record,
-      'review_status',
-      'reviewStatus',
-      'status_label',
-    ),
-    active,
+
+    name:
+      record.name ??
+      record.submitter_name ??
+      record.full_name ??
+      '',
+
+    reelIdea:
+      record.reel_idea ??
+      record.reelIdea ??
+      record.idea ??
+      '',
+
+    reviewStatus:
+      record.review_status ??
+      record.reviewStatus ??
+      record.status_label ??
+      '',
+
+    hookLine: record.hook_line ?? '',
+
+    viralReason: record.viral_reason ?? '',
+
+    active: Number(record.status) === 1,
   }
 }
 
-function parseIdeasResponse(payload) {
-  const records = Array.isArray(payload)
-    ? payload
-    : Array.isArray(payload?.data)
-      ? payload.data
-      : Array.isArray(payload?.ideas)
-        ? payload.ideas
-        : null
+function parseApiResponse(payload) {
+  let records = []
 
-  if (!records) {
-    throw new Error('The Creative Ideas API returned an unsupported response.')
+  /*
+   * Laravel response:
+   *
+   * {
+   *   success: true,
+   *   message: "...",
+   *   data: [...]
+   * }
+   */
+
+  if (Array.isArray(payload)) {
+    records = payload
+  } else if (Array.isArray(payload?.data)) {
+    records = payload.data
+  } else if (Array.isArray(payload?.ideas)) {
+    records = payload.ideas
   }
 
-  const pagination = Array.isArray(payload)
-    ? {}
-    : payload.pagination ?? payload.meta ?? payload
-
-  return {
-    ideas: records.map(normalizeIdea),
-    currentPage: Number(pagination.current_page ?? pagination.currentPage ?? 1),
-    lastPage: Number(
-      pagination.last_page ??
-        pagination.lastPage ??
-        pagination.total_pages ??
-        pagination.totalPages ??
-        1,
-    ),
-    total: Number(pagination.total ?? records.length),
-  }
+  return records.map(normalizeIdea)
 }
 
 function CreativeIdeasAdmin() {
   const { pathname } = useLocation()
-  const statusFilter = pathname.endsWith('/inactive') ? 'inactive' : 'active'
-  const [ideas, setIdeas] = useState([])
+
+  const isInactivePage = pathname.endsWith('/inactive')
+
+  const statusFilter = isInactivePage ? 'inactive' : 'active'
+
+  const [allIdeas, setAllIdeas] = useState([])
+
   const [searchText, setSearchText] = useState('')
   const [search, setSearch] = useState('')
+
   const [page, setPage] = useState(1)
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    lastPage: 1,
-    total: 0,
-  })
+
+  const [loading, setLoading] = useState(true)
+
+  const [error, setError] = useState('')
+
   const [selectedIdea, setSelectedIdea] = useState(null)
-  const [loading, setLoading] = useState(Boolean(apiUrl))
 
-  const fetchIdeas = useCallback(async (signal) => {
-    if (!apiUrl) {
-      return
-    }
-
-    try {
-      const requestUrl = new URL(apiUrl, window.location.origin)
-      requestUrl.searchParams.set('status', statusFilter)
-      requestUrl.searchParams.set('page', String(page))
-      requestUrl.searchParams.set('per_page', String(perPage))
-      if (search) {
-        requestUrl.searchParams.set('search', search)
-      }
-
-      const response = await fetch(requestUrl, {
-        headers: { Accept: 'application/json' },
-        signal,
-      })
-
-      if (!response.ok) {
-        throw new Error(
-          `Unable to load Creative Ideas (HTTP ${response.status}).`,
-        )
-      }
-
-      const result = parseIdeasResponse(await response.json())
-      setIdeas(result.ideas)
-      setPagination(result)
-      setLoading(false)
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        setIdeas([])
-        setPagination({ currentPage: 1, lastPage: 1, total: 0 })
-        setLoading(false)
-      }
-    }
-  }, [page, search, statusFilter])
+  /*
+   * ---------------------------------------------------------
+   * FETCH DATA FROM LARAVEL
+   * ---------------------------------------------------------
+   */
 
   useEffect(() => {
     const controller = new AbortController()
-    Promise.resolve().then(() => fetchIdeas(controller.signal))
-    return () => controller.abort()
-  }, [fetchIdeas])
 
-  const pageNumbers = useMemo(
-    () => Array.from({ length: pagination.lastPage }, (_, index) => index + 1),
-    [pagination.lastPage],
+    async function fetchIdeas() {
+      try {
+        setLoading(true)
+        setError('')
+
+        console.log('Fetching Creative Ideas from:', API_URL)
+
+        const response = await fetch(API_URL, {
+          method: 'GET',
+
+          headers: {
+            Accept: 'application/json',
+          },
+
+          signal: controller.signal,
+        })
+
+        console.log('Creative Ideas response status:', response.status)
+
+        if (!response.ok) {
+          throw new Error(
+            `Laravel API returned HTTP ${response.status}`,
+          )
+        }
+
+        const payload = await response.json()
+
+        console.log('Creative Ideas API response:', payload)
+
+        const records = parseApiResponse(payload)
+
+        console.log('Creative Ideas records:', records)
+
+        setAllIdeas(records)
+        setPage(1)
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          return
+        }
+
+        console.error('Creative Ideas API error:', err)
+
+        setAllIdeas([])
+
+        setError(
+          err.message ||
+            'Unable to load Creative Ideas from the backend.',
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchIdeas()
+
+    return () => {
+      controller.abort()
+    }
+  }, [])
+
+  /*
+   * ---------------------------------------------------------
+   * FILTER ACTIVE / INACTIVE
+   * ---------------------------------------------------------
+   */
+
+  const filteredIdeas = useMemo(() => {
+    let result = [...allIdeas]
+
+    if (statusFilter === 'active') {
+      result = result.filter((idea) => idea.active)
+    } else {
+      result = result.filter((idea) => !idea.active)
+    }
+
+    /*
+     * Search by name
+     */
+    if (search.trim()) {
+      const searchValue = search.trim().toLowerCase()
+
+      result = result.filter((idea) => {
+        const name = String(idea.name || '').toLowerCase()
+
+        const reelIdea = String(
+          idea.reelIdea || '',
+        ).toLowerCase()
+
+        return (
+          name.includes(searchValue) ||
+          reelIdea.includes(searchValue)
+        )
+      })
+    }
+
+    return result
+  }, [allIdeas, search, statusFilter])
+
+  /*
+   * ---------------------------------------------------------
+   * PAGINATION
+   * ---------------------------------------------------------
+   */
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredIdeas.length / PER_PAGE),
   )
+
+  const currentPage = Math.min(page, totalPages)
+
+  const pageNumbers = Array.from(
+    { length: totalPages },
+    (_, index) => index + 1,
+  )
+
+  const paginatedIdeas = useMemo(() => {
+    const startIndex = (currentPage - 1) * PER_PAGE
+
+    return filteredIdeas.slice(
+      startIndex,
+      startIndex + PER_PAGE,
+    )
+  }, [filteredIdeas, currentPage])
+
+  /*
+   * ---------------------------------------------------------
+   * SEARCH
+   * ---------------------------------------------------------
+   */
 
   function submitSearch(event) {
     event.preventDefault()
-    const nextSearch = searchText.trim()
-    if (apiUrl && (nextSearch !== search || page !== 1)) {
-      setLoading(true)
-    }
+
     setPage(1)
-    setSearch(nextSearch)
+
+    setSearch(searchText.trim())
   }
 
   function resetSearch() {
-    if (apiUrl && (searchText || search || page !== 1)) {
-      setLoading(true)
-    }
     setSearchText('')
     setSearch('')
     setPage(1)
   }
 
+  /*
+   * ---------------------------------------------------------
+   * EXPORT CSV
+   * ---------------------------------------------------------
+   */
+
   function exportIdeas() {
     downloadCsv(
       'creative-ideas.csv',
+
       ['Name', 'Reel Idea', 'Review Status'],
-      ideas.map((idea) => [idea.name, idea.reelIdea, idea.reviewStatus]),
+
+      filteredIdeas.map((idea) => [
+        idea.name,
+        idea.reelIdea,
+        idea.reviewStatus,
+      ]),
     )
   }
+
+  /*
+   * ---------------------------------------------------------
+   * EXPORT PDF
+   * ---------------------------------------------------------
+   */
 
   function exportIdeasPdf() {
     downloadPdf(
       'creative-ideas.pdf',
+
       'Creative Ideas',
+
       ['Name', 'Reel Idea', 'Review Status'],
-      ideas.map((idea) => [idea.name, idea.reelIdea, idea.reviewStatus]),
+
+      filteredIdeas.map((idea) => [
+        idea.name,
+        idea.reelIdea,
+        idea.reviewStatus,
+      ]),
     )
   }
 
+  /*
+   * ---------------------------------------------------------
+   * PAGE CHANGE
+   * ---------------------------------------------------------
+   */
+
   function changePage(nextPage) {
-    if (nextPage !== page) {
-      if (apiUrl) {
-        setLoading(true)
-      }
+    if (
+      nextPage >= 1 &&
+      nextPage <= totalPages
+    ) {
       setPage(nextPage)
     }
   }
 
+  /*
+   * ---------------------------------------------------------
+   * UI
+   * ---------------------------------------------------------
+   */
+
   return (
     <AdminLayout
-      pageClass={`creative-ideas-admin${statusFilter === 'inactive' ? ' is-inactive' : ''}`}
+      pageClass={`creative-ideas-admin${
+        isInactivePage ? ' is-inactive' : ''
+      }`}
     >
       <main className="dashboard-main creative-ideas-main">
+
+        {/* HEADER */}
+
         <header className="creative-ideas-header">
+
           <h1>
-            <span aria-hidden="true">{statusFilter === 'inactive' ? '⏸️' : '💡'}</span>
-            {statusFilter === 'inactive'
+            <span aria-hidden="true">
+              {isInactivePage ? '⏸️' : '💡'}
+            </span>
+
+            {isInactivePage
               ? 'Inactive Creative Ideas'
               : 'Manage Creative Ideas'}
           </h1>
-          <div className="creative-ideas-toolbar" aria-label="Creative Ideas actions">
+
+          <div
+            className="creative-ideas-toolbar"
+            aria-label="Creative Ideas actions"
+          >
+
+            {/* ACTIVE */}
+
             <Link
-              className={`talent-show-button talent-show-button-active${statusFilter === 'active' ? ' is-selected' : ''}`}
+              className={`talent-show-button talent-show-button-active${
+                statusFilter === 'active'
+                  ? ' is-selected'
+                  : ''
+              }`}
               to="/admin/ideas"
-              aria-current={statusFilter === 'active' ? 'page' : undefined}
             >
               ✅ Active
             </Link>
+
+            {/* INACTIVE */}
+
             <Link
-              className={`talent-show-button talent-show-button-inactive${statusFilter === 'inactive' ? ' is-selected' : ''}`}
+              className={`talent-show-button talent-show-button-inactive${
+                statusFilter === 'inactive'
+                  ? ' is-selected'
+                  : ''
+              }`}
               to="/admin/ideas/inactive"
-              aria-current={statusFilter === 'inactive' ? 'page' : undefined}
             >
               ⏸ Inactive
             </Link>
-            {statusFilter === 'active' && <Link
-              className="talent-show-button talent-show-button-add"
-              to="/admin/ideas/create"
-            >
-              ➕ Add New
-            </Link>}
-            {statusFilter === 'active' && <button
-              type="button"
-              className="talent-show-button talent-show-button-excel"
-              onClick={exportIdeas}
-              disabled={loading}
-            >
-              📊 Export Excel
-            </button>}
-            {statusFilter === 'active' && <button
-              type="button"
-              className="talent-show-button talent-show-button-pdf"
-              onClick={exportIdeasPdf}
-              disabled={loading}
-            >
-              📄 Export PDF
-            </button>}
+
+            {/* ADD */}
+
+            {statusFilter === 'active' && (
+              <Link
+                className="talent-show-button talent-show-button-add"
+                to="/admin/ideas/create"
+              >
+                ➕ Add New
+              </Link>
+            )}
+
+            {/* CSV */}
+
+            {statusFilter === 'active' && (
+              <button
+                type="button"
+                className="talent-show-button talent-show-button-excel"
+                onClick={exportIdeas}
+                disabled={loading || filteredIdeas.length === 0}
+              >
+                📊 Export Excel
+              </button>
+            )}
+
+            {/* PDF */}
+
+            {statusFilter === 'active' && (
+              <button
+                type="button"
+                className="talent-show-button talent-show-button-pdf"
+                onClick={exportIdeasPdf}
+                disabled={loading || filteredIdeas.length === 0}
+              >
+                📄 Export PDF
+              </button>
+            )}
+
           </div>
         </header>
 
-        <section className="talent-show-card creative-ideas-card" aria-label="Creative Ideas">
+        {/* MAIN CARD */}
+
+        <section
+          className="talent-show-card creative-ideas-card"
+          aria-label="Creative Ideas"
+        >
+
+          {/* SEARCH */}
+
           <form
             className="talent-show-search creative-ideas-search"
             onSubmit={submitSearch}
             role="search"
           >
-            <label className="talent-show-sr-only" htmlFor="creative-ideas-search">
+
+            <label
+              className="talent-show-sr-only"
+              htmlFor="creative-ideas-search"
+            >
               Search Creative Ideas
             </label>
+
             <input
               id="creative-ideas-search"
               type="search"
               placeholder="Search by name..."
               value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
+              onChange={(event) =>
+                setSearchText(event.target.value)
+              }
               disabled={loading}
             />
+
             <button
               type="submit"
               className="talent-show-button talent-show-button-search"
@@ -263,6 +440,7 @@ function CreativeIdeasAdmin() {
             >
               🔍 Search
             </button>
+
             <button
               type="button"
               className="talent-show-button talent-show-button-reset"
@@ -270,149 +448,339 @@ function CreativeIdeasAdmin() {
             >
               ✕ Reset
             </button>
+
           </form>
 
+          {/* ERROR */}
+
+          {error && (
+            <div
+              style={{
+                margin: '20px 0',
+                padding: '15px',
+                borderRadius: '8px',
+                background: '#ffe5e5',
+                color: '#b00020',
+                fontWeight: '600',
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {/* TABLE */}
+
           <div className="talent-show-table-scroll creative-ideas-table-scroll">
+
             <table className="talent-show-table creative-ideas-table">
+
               <thead>
                 <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">Reel Idea</th>
-                  <th scope="col">Review Status</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col">
+                    Name
+                  </th>
+
+                  <th scope="col">
+                    Reel Idea
+                  </th>
+
+                  <th scope="col">
+                    Review Status
+                  </th>
+
+                  <th scope="col">
+                    Actions
+                  </th>
                 </tr>
               </thead>
+
               <tbody>
-                {loading ? (
+
+                {/* LOADING */}
+
+                {loading && (
                   <tr>
-                    <td className="talent-show-empty" colSpan="4">
+                    <td
+                      className="talent-show-empty"
+                      colSpan="4"
+                    >
                       Loading Creative Ideas...
                     </td>
                   </tr>
-                ) : ideas.length === 0 ? (
-                  <tr>
-                    <td className="talent-show-empty" colSpan="4">
-                      No Creative Ideas found.
-                    </td>
-                  </tr>
-                ) : (
-                  ideas.map((idea) => (
+                )}
+
+                {/* NO DATA */}
+
+                {!loading &&
+                  !error &&
+                  paginatedIdeas.length === 0 && (
+                    <tr>
+                      <td
+                        className="talent-show-empty"
+                        colSpan="4"
+                      >
+                        No Creative Ideas found.
+                      </td>
+                    </tr>
+                  )}
+
+                {/* DATA */}
+
+                {!loading &&
+                  paginatedIdeas.length > 0 &&
+                  paginatedIdeas.map((idea) => (
                     <tr key={idea.id}>
-                      <td>{idea.name}</td>
-                      <td className="creative-ideas-reel">{idea.reelIdea}</td>
+
+                      {/* NAME */}
+
+                      <td>
+                        {idea.name || '—'}
+                      </td>
+
+                      {/* REEL IDEA */}
+
+                      <td className="creative-ideas-reel">
+                        {idea.reelIdea || '—'}
+                      </td>
+
+                      {/* REVIEW STATUS */}
+
                       <td>
                         <span className="creative-ideas-status">
-                          {idea.reviewStatus || '—'}
+
+                          {Number(idea.reviewStatus) === 0
+                            ? 'Pending'
+                            : Number(idea.reviewStatus) === 1
+                              ? 'Approved'
+                              : Number(idea.reviewStatus) === 2
+                                ? 'Rejected'
+                                : idea.reviewStatus || '—'}
+
                         </span>
                       </td>
+
+                      {/* ACTIONS */}
+
                       <td>
+
                         <div className="talent-show-row-actions">
+
                           <button
                             type="button"
                             className="talent-show-button talent-show-button-view"
-                            onClick={() => setSelectedIdea(idea)}
+                            onClick={() =>
+                              setSelectedIdea(idea)
+                            }
                           >
                             View
                           </button>
+
                           <button
                             type="button"
                             className="talent-show-button talent-show-button-edit"
                             disabled
-                            title="Connect the existing update endpoint to enable editing."
+                            title="Edit endpoint is not connected yet."
                           >
                             Edit
                           </button>
+
                           <button
                             type="button"
                             className="talent-show-button talent-show-button-deactivate"
                             disabled
-                            title="Connect the existing deactivate endpoint to enable this action."
+                            title="Deactivate endpoint is not connected yet."
                           >
                             Deactivate
                           </button>
+
                         </div>
+
                       </td>
+
                     </tr>
-                  ))
-                )}
+                  ))}
+
               </tbody>
+
             </table>
+
           </div>
 
-          {!loading && pagination.lastPage > 1 && (
-            <nav className="creative-ideas-pagination" aria-label="Pagination">
-              <button
-                type="button"
-                onClick={() => changePage(Math.max(1, page - 1))}
-                disabled={page <= 1}
-                aria-label="Previous page"
+          {/* PAGINATION */}
+
+          {!loading &&
+            totalPages > 1 && (
+
+              <nav
+                className="creative-ideas-pagination"
+                aria-label="Pagination"
               >
-                ‹
-              </button>
-              {pageNumbers.map((pageNumber) => (
+
                 <button
                   type="button"
-                  key={pageNumber}
-                  className={pageNumber === pagination.currentPage ? 'is-current' : ''}
-                  onClick={() => changePage(pageNumber)}
-                  aria-current={
-                    pageNumber === pagination.currentPage ? 'page' : undefined
+                  onClick={() =>
+                    changePage(currentPage - 1)
                   }
+                  disabled={currentPage <= 1}
+                  aria-label="Previous page"
                 >
-                  {pageNumber}
+                  ‹
                 </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => changePage(Math.min(pagination.lastPage, page + 1))}
-                disabled={page >= pagination.lastPage}
-                aria-label="Next page"
-              >
-                ›
-              </button>
-            </nav>
-          )}
+
+                {pageNumbers.map((pageNumber) => (
+
+                  <button
+                    type="button"
+                    key={pageNumber}
+                    className={
+                      pageNumber === currentPage
+                        ? 'is-current'
+                        : ''
+                    }
+                    onClick={() =>
+                      changePage(pageNumber)
+                    }
+                  >
+                    {pageNumber}
+                  </button>
+
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    changePage(currentPage + 1)
+                  }
+                  disabled={
+                    currentPage >= totalPages
+                  }
+                  aria-label="Next page"
+                >
+                  ›
+                </button>
+
+              </nav>
+
+            )}
+
         </section>
+
       </main>
 
+      {/* DETAILS MODAL */}
+
       {selectedIdea && (
+
         <div
           className="talent-show-modal-backdrop"
-          onClick={() => setSelectedIdea(null)}
+          onClick={() =>
+            setSelectedIdea(null)
+          }
           role="presentation"
         >
+
           <section
             className="talent-show-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="creative-idea-details-title"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) =>
+              event.stopPropagation()
+            }
           >
+
             <div className="talent-show-modal-heading">
-              <h2 id="creative-idea-details-title">Creative Idea Details</h2>
+
+              <h2 id="creative-idea-details-title">
+                Creative Idea Details
+              </h2>
+
               <button
                 type="button"
                 className="talent-show-modal-close"
-                onClick={() => setSelectedIdea(null)}
+                onClick={() =>
+                  setSelectedIdea(null)
+                }
                 aria-label="Close dialog"
               >
                 ×
               </button>
+
             </div>
+
             <dl className="talent-show-details creative-idea-details">
-              <div><dt>Name</dt><dd>{selectedIdea.name || '—'}</dd></div>
-              <div><dt>Reel Idea</dt><dd>{selectedIdea.reelIdea || '—'}</dd></div>
-              <div><dt>Review Status</dt><dd>{selectedIdea.reviewStatus || '—'}</dd></div>
-              {selectedIdea.hook_line && (
-                <div><dt>Hook Line</dt><dd>{selectedIdea.hook_line}</dd></div>
+
+              <div>
+                <dt>Name</dt>
+                <dd>
+                  {selectedIdea.name || '—'}
+                </dd>
+              </div>
+
+              <div>
+                <dt>Reel Idea</dt>
+                <dd>
+                  {selectedIdea.reelIdea || '—'}
+                </dd>
+              </div>
+
+              <div>
+                <dt>Review Status</dt>
+                <dd>
+                  {Number(selectedIdea.reviewStatus) === 0
+                    ? 'Pending'
+                    : Number(selectedIdea.reviewStatus) === 1
+                      ? 'Approved'
+                      : Number(selectedIdea.reviewStatus) === 2
+                        ? 'Rejected'
+                        : selectedIdea.reviewStatus || '—'}
+                </dd>
+              </div>
+
+              {selectedIdea.hookLine && (
+                <div>
+                  <dt>Hook Line</dt>
+                  <dd>
+                    {selectedIdea.hookLine}
+                  </dd>
+                </div>
               )}
-              {selectedIdea.viral_reason && (
-                <div><dt>Why It Could Work</dt><dd>{selectedIdea.viral_reason}</dd></div>
+
+              {selectedIdea.viralReason && (
+                <div>
+                  <dt>Why It Could Work</dt>
+                  <dd>
+                    {selectedIdea.viralReason}
+                  </dd>
+                </div>
               )}
+
+              {selectedIdea.instagram && (
+                <div>
+                  <dt>Instagram</dt>
+                  <dd>
+                    {selectedIdea.instagram}
+                  </dd>
+                </div>
+              )}
+
+              {selectedIdea.email && (
+                <div>
+                  <dt>Email</dt>
+                  <dd>
+                    {selectedIdea.email}
+                  </dd>
+                </div>
+              )}
+
             </dl>
+
           </section>
+
         </div>
+
       )}
+
     </AdminLayout>
   )
 }

@@ -1,18 +1,10 @@
 import { useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import {
+  adminNavigationItems,
+  isAdminNavigationItemActive,
+} from './adminNavigation.js'
 import '../../styles/pages/Dashboard.css'
-
-const navigationItems = [
-  { icon: '▦', label: 'Dashboard', path: '/dashboard' },
-  { icon: '▱', label: 'Videos & Shorts', path: '/admin/videos' },
-  { icon: '☻', label: 'Auditions', path: '/admin/auditions' },
-  { icon: '⊕', label: 'Dhol Pathak', path: '/admin/dhol-pathak' },
-  { icon: '☆', label: 'Talent Show', path: '/admin/talent-shows' },
-  { icon: 'ⓘ', label: 'Creative Ideas', path: '/admin/ideas' },
-  { icon: '♙', label: 'Brand Deals', path: '/admin/collaborations' },
-  { icon: '▤', label: 'Tickets', path: '/admin/tickets' },
-  { icon: '♧', label: 'Users', path: '/admin/users' },
-]
 
 function AdminLayout({ children, pageClass = '' }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -56,7 +48,7 @@ function AdminLayout({ children, pageClass = '' }) {
         </div>
 
         <nav className="dashboard-navigation" aria-label="Admin navigation">
-          {navigationItems.map((item) => (
+          {adminNavigationItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.path}
@@ -69,11 +61,8 @@ function AdminLayout({ children, pageClass = '' }) {
               }
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => {
-                const talentShowRoute =
-                  item.label === 'Talent Show' &&
-                  (pathname.startsWith('/admin/talent-show') ||
-                    pathname.startsWith('/admin/talent-shows'))
-                const active = isActive || talentShowRoute
+                const active =
+                  isActive || isAdminNavigationItemActive(item, pathname)
                 return `dashboard-nav-link${active ? ' dashboard-nav-active' : ''}`
               }}
             >

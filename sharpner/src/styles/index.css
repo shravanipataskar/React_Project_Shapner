@@ -8,6 +8,7 @@ html {
 }
 
 :root {
+  --admin-sidebar-width: clamp(203px, 18.3vw, 350px);
   font-size: 125%;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;

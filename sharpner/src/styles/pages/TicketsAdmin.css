@@ -34,12 +34,12 @@
 
 @media (min-width: 851px) {
   .sharpner-dashboard.tickets-admin .dashboard-sidebar {
-    width: clamp(203px, 18.3vw, 298px);
+    width: var(--dashboard-sidebar-width);
   }
 
   .sharpner-dashboard.tickets-admin .dashboard-main {
-    width: calc(100% - clamp(203px, 18.3vw, 298px));
-    margin-left: clamp(203px, 18.3vw, 298px);
+    width: calc(100% - var(--dashboard-sidebar-width));
+    margin-left: var(--dashboard-sidebar-width);
     padding: 42px 50px 30px 42px;
   }
 

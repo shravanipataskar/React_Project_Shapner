@@ -1,18 +1,12 @@
-import { Link } from "react-router-dom";
-
-const navigationItems = [
-  { icon: "▦", label: "Dashboard", path: "/dashboard" },
-  { icon: "▣", label: "Videos & Shorts", path: "/admin/videos" },
-  { icon: "☻", label: "Auditions", path: "/admin/auditions" },
-  { icon: "⊕", label: "Dhol Pathak", path: "/admin/dhol-pathak" },
-  { icon: "☆", label: "Talent Show", path: "/admin/talent-shows" },
-  { icon: "ⓘ", label: "Creative Ideas", path: "/admin/creative-ideas" },
-  { icon: "♙", label: "Brand Deals", path: "/admin/brand-deals" },
-  { icon: "▤", label: "Tickets", path: "/admin/tickets" },
-  { icon: "♧", label: "Users", path: "/admin/users" },
-];
+import { Link, NavLink, useLocation } from "react-router-dom";
+import {
+  adminNavigationItems,
+  isAdminNavigationItemActive,
+} from "../layout/adminNavigation.js";
 
 export default function AuditionsSidebar({ isOpen, onClose, onToggle }) {
+  const { pathname } = useLocation();
+
   const handleSignOut = () => {
     if (window.confirm("Are you sure you want to sign out?")) {
       window.location.href = "/login";
@@ -52,20 +46,22 @@ export default function AuditionsSidebar({ isOpen, onClose, onToggle }) {
         </div>
 
         <nav className="auditions-navigation">
-          {navigationItems.map((item) => (
-            <Link
+          {adminNavigationItems.map((item) => (
+            <NavLink
               key={item.label}
               to={item.path}
               onClick={onClose}
-              className={`auditions-nav-link ${
-                item.path === "/admin/auditions"
-                  ? "auditions-nav-active"
-                  : ""
-              }`}
+              className={({ isActive }) =>
+                `auditions-nav-link ${
+                  isActive || isAdminNavigationItemActive(item, pathname)
+                    ? "auditions-nav-active"
+                    : ""
+                }`
+              }
             >
               <span className="auditions-nav-icon">{item.icon}</span>
               {item.label}
-            </Link>
+            </NavLink>
           ))}
 
           <button

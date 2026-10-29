@@ -46,6 +46,7 @@ function AppRouter() {
       <Routes>
          <Route path="/login" element={<LoginPage />} />
          <Route path="/dashboard" element={<Dashboard />} />
+         <Route path="/admin/dashboard" element={<Navigate to="/dashboard" replace />} />
          <Route path="/admin/talent-show" element={<TalentShow />} />
          <Route path="/admin/talent-shows" element={<TalentShow />} />
          <Route path="/admin/talent-show/inactive" element={<TalentShow />} />
