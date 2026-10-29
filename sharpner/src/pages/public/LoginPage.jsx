@@ -1,8 +1,7 @@
 
 import React, { useState } from "react";
+import AdminLayout from "../../components/layout/AdminLayout.jsx";
 import "../../styles/pages/LoginPage.css";
-
-const LOGO_URL = "https://sharpner.co.in/assets/img/Logo3.png";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -29,26 +28,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="admin-login-page">
-      {/* Header */}
-      <header className="admin-login-header">
-        <a
-          href="/"
-          className="admin-login-brand"
-          aria-label="Sharpner World home"
-        >
-          <img src={LOGO_URL} alt="Sharpner World" />
-        </a>
-
-        <nav className="admin-login-nav" aria-label="Main navigation">
-          <a href="/">Home</a>
-          <a href="/about">About</a>
-          <a href="/collaborate">Brand Deals</a>
-        </nav>
-      </header>
-
-      {/* Main login section */}
-      <main className="admin-login-main">
+    <AdminLayout pageClass="admin-login-dashboard">
+      <main className="dashboard-main admin-login-main">
         <section className="admin-login-card">
           <div className="admin-login-heading">
             <h1>Admin Login</h1>
@@ -132,63 +113,6 @@ export default function LoginPage() {
           </form>
         </section>
       </main>
-
-      {/* Footer */}
-      <footer className="admin-login-footer">
-        <div className="admin-login-footer-main">
-          <div className="admin-login-footer-brand">
-            <h2>Sharpner World</h2>
-            <p>A Movement Of Little Ones With Big Dreams</p>
-          </div>
-
-          <div className="admin-login-social">
-            <span>Follow Us</span>
-
-            <a
-              href="https://www.youtube.com/@sharpnerWorld"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="YouTube"
-            >
-              <span className="admin-social-youtube">▶</span>
-            </a>
-
-            <a
-              href="https://www.instagram.com/sharpnerworld/"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Instagram"
-            >
-              ◎
-            </a>
-
-            <a
-              href="https://www.facebook.com/"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Facebook"
-            >
-              <span className="admin-social-facebook">f</span>
-            </a>
-          </div>
-
-          <nav className="admin-login-footer-links" aria-label="Legal links">
-            <a href="/legal">Privacy Policy</a>
-            <a href="/terms-conditions">Terms &amp; Conditions</a>
-            <a href="/child-safety-policy">Child Safety Policy</a>
-            <a href="/community-guidelines">Community Guidelines</a>
-          </nav>
-        </div>
-
-        <div className="admin-login-footer-bottom">
-          <span>© 2026 AayojanAI. All Rights Reserved.</span>
-
-          <span>
-            Developed By <strong>AayojanAI</strong>
-          </span>
-        </div>
-      </footer>
-    </div>
+    </AdminLayout>
   );
 }
-
