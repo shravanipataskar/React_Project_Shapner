@@ -1,0 +1,373 @@
+/* SHARPNER About page — scoped styles matching the original reference */
+.about-page {
+  --about-black: #0d0d0d;
+  --about-dark: #1b1b1b;
+  --about-card: #29281d;
+  --about-gold: #ffd400;
+  --about-text: #f1f1f1;
+  --about-muted: #c9c9c9;
+  background: var(--about-dark);
+  color: var(--about-text);
+  font-family: "Outfit", Arial, sans-serif;
+  font-size: 17.5px;
+  line-height: 1.7;
+  overflow: hidden;
+}
+
+.about-page *, .about-page *::before, .about-page *::after { box-sizing: border-box; }
+.about-page section { position: relative; }
+.about-page p { margin-top: 0; }
+.about-page img { display: block; max-width: 100%; }
+.about-page a { color: var(--about-gold); text-decoration: none; transition: color .2s ease, text-shadow .2s ease; }
+.about-page a:hover { color: #fff; text-shadow: 0 0 10px #ffd40055; }
+.about-container { width: min(100% - 64px, 1164px); margin-inline: auto; }
+
+.about-section-title {
+  position: relative;
+  margin: 0 0 28px;
+  color: var(--about-gold);
+  font-size: clamp(28.75px, 2.1vw, 37.5px);
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  text-shadow: 0 0 18px #ffd40030;
+}
+.about-section-title::after {
+  display: block;
+  width: 70px;
+  height: 2px;
+  margin: 9px auto 0;
+  background: var(--about-gold);
+  border-radius: 2px;
+  content: "";
+}
+.about-title-icon { margin-right: 5px; }
+
+/* Header: the About page uses the same branded header as the source site. */
+.about-site-header {
+  width: 100%;
+  min-height: 118px;
+  padding: 0 max(60px, calc((100% - 1260px) / 2)) 0 max(42px, calc((100% - 1284px) / 2));
+  position: relative;
+  z-index: 5;
+  border-bottom: 3px solid #ffd400;
+  background: #1a1a1a;
+  box-shadow: 0 5px 24px #0006;
+}
+.about-site-header .brand-deals-logo img { height: 100px; width: auto; }
+.about-site-header .site-nav { gap: 16px; margin-left: auto; }
+.about-site-header .site-nav a {
+  padding: 8px;
+  color: #f0f0f0;
+  border-radius: 5px;
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.about-site-header .site-nav a:hover,
+.about-site-header .site-nav a:focus-visible,
+.about-site-header .site-nav a:active {
+  color: #ffd700;
+  background: rgb(255 215 0 / 10%);
+  border-radius: 8px;
+}
+.about-site-header .site-nav a.active { color: var(--about-gold); background: transparent; }
+.about-site-header .site-nav a.active { color: var(--about-gold); background: rgb(255 215 0 / 10%); }
+
+/* 1 — Hero */
+.about-hero {
+  height: 516px;
+  min-height: 516px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-bottom: 2px solid var(--about-gold);
+  background:
+    radial-gradient(ellipse at 72% 60%, #51410055 0%, #29250d66 30%, transparent 62%),
+    linear-gradient(110deg, #141414 0%, #1d1c16 60%, #171717 100%);
+}
+.about-hero-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  height: 100%;
+  padding-block: 0;
+}
+.about-hero-content { position: relative; z-index: 1; transform: translateY(51px); }
+.about-hero-content h1 {
+  display: inline-block;
+  margin: 0 0 12px;
+  color: var(--about-gold);
+  font-size: clamp(47.5px, 3.7vw, 62.5px);
+  font-weight: 800;
+  line-height: 1.15;
+  text-shadow: 0 0 20px #ffd40025;
+}
+.about-hero-content h1::after {
+  display: block;
+  width: 80px;
+  height: 4px;
+  margin-top: 10px;
+  background: var(--about-gold);
+  border-radius: 2px;
+  content: "";
+}
+.about-hero-content p {
+  max-width: 560px;
+  margin-bottom: 20px;
+  color: #e2e2e2;
+  font-size: 20px;
+  line-height: 1.85;
+}
+.about-hero-content .about-hero-subtitle { color: #f5f5f5; font-weight: 700; }
+.about-hero-content p { max-width: 540px; font-size: 21.25px; line-height: 1.8; }
+.about-hero-content .about-hero-subtitle { margin-bottom: 29px; }
+.about-hero-image {
+  position: absolute;
+  inset: 0 -18px 0 calc(50% + 40px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  overflow: visible;
+}
+.about-hero-image img {
+  position: absolute;
+  top: -146px;
+  right: 0;
+  width: min(100%, 560px);
+  max-width: none;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* 2 — Reason to start */
+.about-story { padding: 66px 0 8px; background: #1c1c1c; }
+.about-story .about-section-title { margin-bottom: 34px; }
+.about-story-content { max-width: 850px; margin-inline: auto; text-align: center; }
+.about-story-intro { margin-bottom: 34px; }
+.about-story-intro p { margin-bottom: 8px; font-size: 22.5px; line-height: 1.55; }
+.about-story-intro .about-highlight { color: var(--about-gold); font-weight: 800; }
+.about-story-intro .about-story-bold { color: #fff; font-weight: 700; }
+.about-platform-label { margin-bottom: 26px; color: #f0f0f0; font-size: 18.75px; }
+.about-reasons-card {
+  max-width: 680px;
+  margin: 0 auto 30px;
+  padding: 24px 28px;
+  background: #ffd4000b;
+  border: 1px solid #ffd40042;
+  border-radius: 14px;
+  text-align: left;
+}
+.about-reasons-card ul { padding: 0; margin: 0; list-style: none; }
+.about-reasons-card li { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; color: #f5f5f5; font-size: 17.5px; line-height: 1.6; }
+.about-reasons-card li span { flex: 0 0 auto; }
+.about-story-transition { margin: 24px 0 28px; }
+.about-story-transition p { margin-bottom: 8px; color: #d0d0d0; font-size: 17.5px; }
+.about-story-quote {
+  max-width: 720px;
+  margin: 0 auto 28px;
+  padding: 18px 24px;
+  border: 1px solid var(--about-gold);
+  border-radius: 12px;
+  background: linear-gradient(110deg, #ffd40020, #ffd40008);
+  box-shadow: 0 0 22px #ffd40022;
+  color: #fff;
+  font-weight: 800;
+}
+.about-story-identity p { margin-bottom: 8px; color: #f0f0f0; font-weight: 700; }
+.about-story-identity p:last-child { margin-bottom: 0; }
+
+/* 3 — Founders */
+.about-founders { padding: 12px 0 58px; background: #1c1c1c; }
+.about-founders .about-section-title { margin-bottom: 36px; color: #fff; }
+.about-founder-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; align-items: start; }
+.about-founder { min-width: 0; text-align: center; }
+.about-founder-image {
+  width: 145px; height: 145px; margin: 0 auto 14px; overflow: hidden;
+  background: #252525; border: 1px solid #ffd40030; border-radius: 50%;
+}
+.about-founder-image img { width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform .3s ease; }
+.about-founder:hover .about-founder-image img { transform: scale(1.05); }
+.about-founder h3 { margin: 0 0 5px; color: var(--about-gold); font-size: 21.25px; font-weight: 800; }
+.about-founder p { max-width: 270px; margin: 0 auto; color: #c7c7c7; font-size: 15px; line-height: 1.6; }
+
+/* 4 — Mission artwork */
+.about-mission { padding: 38px 0; background: #191919; }
+.about-mission .about-container, .about-future .about-container { display: flex; justify-content: center; }
+.about-mission img { width: 100%; max-width: 960px; height: auto; border-radius: 10px; }
+
+/* 5 — Experimental mindset */
+.about-experiments { padding: 40px 0 52px; background: #1c1c1c; }
+.about-experiments-heading { margin-bottom: 28px; text-align: center; }
+.about-experiments-heading .about-section-title { margin-bottom: 15px; }
+.about-experiments-heading > p { margin: 0 auto; color: #c9c9c9; font-size: 16.25px; line-height: 1.7; }
+.about-experiment-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.about-experiment-card {
+  min-width: 0; padding: 26px 20px; background: linear-gradient(135deg, #ffd40013, #ffd40007);
+  border: 1px solid #ffd4004a; border-radius: 15px; text-align: center;
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.about-experiment-card:hover { transform: translateY(-3px); border-color: var(--about-gold); box-shadow: 0 10px 28px #ffd40017; }
+.about-experiment-number { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; margin: 0 auto 18px; color: #111; background: var(--about-gold); border-radius: 50%; font-size: 21.25px; font-weight: 800; }
+.about-experiment-card h3 { margin: 0 0 12px; color: var(--about-gold); font-size: 20px; font-weight: 800; line-height: 1.45; }
+.about-experiment-card p { margin: 0; color: #e0e0e0; font-size: 15px; line-height: 1.8; }
+
+/* 6 — Future dream artwork */
+.about-future { padding: 38px 0; background: #191919; }
+.about-future img { width: 100%; max-width: 960px; height: auto; border: 1px solid #ffd40070; border-radius: 12px; box-shadow: 0 0 24px #ffd40017; }
+
+/* 7 — Contact */
+.about-contact { display: flex; justify-content: center; padding: 42px 24px; background: #191919; }
+.about-contact-card { width: 100%; max-width: 500px; padding: 35px 30px; background: #1a1a1a; border: 1px solid #ffd40026; border-radius: 12px; box-shadow: 0 10px 30px #0004; text-align: center; }
+.about-contact-card .about-section-title { margin-bottom: 30px; }
+.about-contact-item { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-bottom: 20px; }
+.about-contact-item:last-child { margin-bottom: 0; }
+.about-contact-item span { color: #e0e0e0; font-size: 16.25px; }
+.about-contact-item a { overflow-wrap: anywhere; color: var(--about-gold); font-size: 18.75px; font-weight: 700; }
+
+/* 8 — Team */
+.about-team { padding: 38px 0 46px; background: #1c1c1c; }
+.about-team-heading { max-width: 650px; margin: 0 auto 32px; text-align: center; }
+.about-team-heading .about-section-title { margin-bottom: 16px; }
+.about-team-heading > p { margin: 0; color: #e0e0e0; font-size: 16.25px; line-height: 1.8; }
+.about-team-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; max-width: 950px; margin: 0 auto 28px; }
+.about-team-card { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; min-height: 145px; padding: 20px 12px; background: linear-gradient(135deg, #1f1f1f, #0d0d0d); border: 1px solid #ffd40059; border-radius: 12px; box-shadow: 0 8px 24px #0003; transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
+.about-team-card:hover { transform: translateY(-3px); border-color: var(--about-gold); box-shadow: 0 10px 25px #ffd4001f; }
+.about-team-star { display: flex; align-items: center; justify-content: center; width: 45px; height: 45px; margin-bottom: 12px; color: var(--about-gold); background: #ffd4001f; border: 1px solid #ffd40066; border-radius: 50%; font-size: 28.75px; }
+.about-team-card h3 { margin: 0; color: var(--about-gold); font-size: 17.5px; font-weight: 800; }
+.about-team-values { max-width: 600px; margin: 0 auto; text-align: center; }
+.about-team-values > p { margin-bottom: 12px; color: #b0b0b0; font-size: 16.25px; }
+.about-team-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.about-team-tags span { padding: 7px 14px; color: #e0e0e0; background: #ffd40012; border: 1px solid #ffd40038; border-radius: 50px; font-size: 13.75px; }
+
+/* 9 — Final line */
+.about-final { padding: 42px 0 48px; background: #1c1c1c; text-align: center; }
+.about-final .about-section-title { margin-bottom: 20px; }
+.about-final .about-container > p { max-width: 700px; margin: 0 auto; color: #f0f0f0; font-size: 22.5px; font-weight: 600; line-height: 1.8; }
+
+/* Footer on the About page: retain the existing footer component but tighten it to the reference. */
+#root:has(.about-page) .footer-section { border-top: 1px solid #ffd40055; }
+#root:has(.about-page) .footer-main { grid-template-columns: 1fr auto 1fr; gap: 20px; padding: 14px 35px; }
+#root:has(.about-page) .footer-brand h4 { font-size: 31.25px; }
+#root:has(.about-page) .footer-brand p { font-size: 15px; }
+#root:has(.about-page) .footer-follow { gap: 8px; padding: 7px 15px; }
+#root:has(.about-page) .footer-follow span { font-size: 15px; }
+#root:has(.about-page) .footer-follow a { width: 27px; height: 27px; }
+#root:has(.about-page) .footer-links a { padding-inline: 10px; font-size: 13.75px; }
+#root:has(.about-page) .footer-bottom { padding: 8px 35px; font-size: 12.5px; }
+
+@media (max-width: 991px) {
+  .about-site-header { min-height: 88px; padding: 4px 24px; }
+  .about-site-header .brand-deals-logo img { height: 76px; }
+  .about-site-header .site-nav { gap: 5px; }
+  .about-site-header .site-nav a { padding: 7px 9px; }
+  .about-site-header .site-nav { gap: 5px; }
+  .about-site-header .site-nav a { padding: 7px 9px; font-size: 17.5px; }
+  .about-site-header { padding-inline: 24px; }
+  .about-site-header .brand-deals-logo img { height: 76px; }
+  .about-hero { height: auto; min-height: 470px; }
+  .about-hero-inner { height: auto; min-height: 470px; gap: 16px; padding-block: 34px; }
+  .about-hero-content { transform: none; }
+  .about-hero-content h1 { margin-bottom: 18px; }
+  .about-hero-content p { max-width: 560px; font-size: 17.5px; line-height: 1.85; }
+  .about-hero-content .about-hero-subtitle { margin-bottom: 20px; }
+  .about-hero-content h1 { font-size: 47.5px; }
+  .about-hero-content p { font-size: 17.5px; }
+  .about-hero-image { position: relative; inset: auto; width: auto; overflow: visible; }
+  .about-hero-image img { position: static; width: 100%; max-width: 360px; }
+  .about-founder-grid { gap: 22px; }
+  .about-founder-image { width: 125px; height: 125px; }
+  .about-experiment-grid { gap: 14px; }
+  .about-experiment-card { padding: 22px 14px; }
+  .about-team-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+}
+
+@media (max-width: 767px) {
+  .about-container { width: calc(100% - 36px); }
+  .about-section-title { font-size: 27.5px; }
+  .about-site-header { min-height: 36px; padding: 2px 14px; flex-wrap: nowrap; gap: 8px; border-bottom-width: 2px; }
+  .about-site-header .brand-deals-logo img { height: 32px; max-width: 70px; }
+  .about-site-header .brand-deals-menu-toggle { display: none; }
+  .about-site-header .site-nav { display: flex; flex: 1; flex-direction: row; justify-content: flex-end; gap: 0; overflow: visible; }
+  .about-site-header .site-nav a { padding: 4px 6px; font-size: 8.75px; }
+  .about-hero { min-height: 0; }
+  .about-hero-inner { min-height: 0; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 5px; padding-block: 9.5px; }
+  .about-hero-content h1 { margin-bottom: 9px; font-size: clamp(23.75px, 4.8vw, 36.25px); }
+  .about-hero-content h1::after { width: 48px; height: 2px; margin-top: 5px; }
+  .about-hero-content p { margin-bottom: 8px; font-size: 11.25px; line-height: 1.65; }
+  .about-hero-image img { width: 80%; max-width: none; transform: scaleX(1.25); }
+  .about-story { padding: 26px 0 20px; }
+  .about-story .about-section-title { margin-bottom: 2px; font-size: 20px; }
+  .about-story-intro { margin-bottom: 4px; }
+  .about-story-intro p { margin-bottom: 4px; font-size: 12.5px; }
+  .about-platform-label { margin-bottom: 1px; font-size: 12.5px; }
+  .about-reasons-card { width: 220px; max-width: 100%; margin-bottom: 12px; padding: 7px 12px; border-radius: 8px; }
+  .about-reasons-card li { gap: 7px; padding: 1.5px 0; font-size: 11.25px; }
+  .about-story-transition { margin: 10px 0 12px; }
+  .about-story-transition p { margin-bottom: 4px; font-size: 11.25px; }
+  .about-story-quote { margin-bottom: 14px; padding: 11px 12px; border-radius: 8px; font-size: 12.5px; }
+  .about-story-identity p { margin-bottom: 5px; font-size: 12.5px; }
+  .about-founders { padding: 0 0 35px; }
+  .about-founders .about-section-title { margin-bottom: 20px; font-size: 22.5px; }
+  .about-founder-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .about-founder-image { width: clamp(54px, 13vw, 86px); height: clamp(54px, 13vw, 86px); margin-bottom: 7px; }
+  .about-founder h3 { margin-bottom: 3px; font-size: 11.25px; }
+  .about-founder p { font-size: 7.5px; line-height: 1.45; }
+  .about-mission { padding: 10px 0; }
+  .about-mission img { width: 82%; border-radius: 6px; }
+  .about-experiments { padding: 12px 0 20px; }
+  .about-experiments-heading { margin-bottom: 10px; }
+  .about-experiments-heading .about-section-title { margin-bottom: 5px; font-size: 21.25px; }
+  .about-experiments-heading > p { font-size: 10px; }
+  .about-experiment-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .about-experiment-card { padding: 12px 7px; border-radius: 8px; }
+  .about-experiment-number { width: 24px; height: 24px; margin-bottom: 9px; font-size: 11.25px; }
+  .about-experiment-card h3 { margin-bottom: 6px; font-size: 10px; }
+  .about-experiment-card p { font-size: 7.5px; line-height: 1.55; }
+  .about-future { padding: 10px 0; }
+  .about-future img { width: 82%; border-radius: 7px; }
+  .about-contact { padding: 14px 0; }
+  .about-contact-card { width: 46%; padding: 14px 12px; border-radius: 7px; }
+  .about-contact-card .about-section-title { margin-bottom: 15px; font-size: 21.25px; }
+  .about-contact-card .about-section-title::after { width: 40px; margin-top: 5px; }
+  .about-contact-item { gap: 2px; margin-bottom: 11px; }
+  .about-contact-item span { font-size: 8.75px; }
+  .about-contact-item a { font-size: 10px; }
+  .about-team { padding: 18px 0 20px; }
+  .about-team-heading { margin-bottom: 18px; }
+  .about-team-heading .about-section-title { margin-bottom: 8px; font-size: 21.25px; }
+  .about-team-heading > p { font-size: 8.75px; }
+  .about-team-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+  .about-team-card { min-height: 52px; padding: 7px 3px; border-radius: 6px; }
+  .about-team-star { width: 20px; height: 20px; margin-bottom: 5px; font-size: 13.75px; }
+  .about-team-card h3 { font-size: 8.75px; }
+  .about-team-values > p { margin-bottom: 6px; font-size: 8.75px; }
+  .about-team-tags { gap: 4px; }
+  .about-team-tags span { padding: 4px 7px; font-size: 7.5px; }
+  .about-final { padding: 25px 0 28px; }
+  .about-final .about-section-title { margin-bottom: 12px; font-size: 21.25px; }
+  .about-final .about-section-title::after { margin-top: 5px; }
+  .about-final .about-container > p { max-width: 360px; font-size: 11.25px; line-height: 1.7; }
+  #root:has(.about-page) .footer-main { grid-template-columns: 1fr auto 1fr; gap: 5px; padding: 8px 10px; }
+  #root:has(.about-page) .footer-brand h4 { font-size: 15px; }
+  #root:has(.about-page) .footer-brand p { font-size: 6.25px; }
+  #root:has(.about-page) .footer-follow { gap: 3px; padding: 4px 6px; }
+  #root:has(.about-page) .footer-follow span { font-size: 7.5px; }
+  #root:has(.about-page) .footer-follow a { width: 15px; height: 15px; font-size: 10px; }
+  #root:has(.about-page) .footer-links { flex-wrap: nowrap; justify-content: flex-end; }
+  #root:has(.about-page) .footer-links a { padding-inline: 4px; font-size: 6.25px; line-height: 1.35; }
+  #root:has(.about-page) .footer-bottom { flex-direction: row; gap: 4px; padding: 5px 10px; font-size: 6.25px; }
+}
+
+@media (max-width: 390px) {
+  .about-container { width: calc(100% - 28px); }
+  .about-site-header .brand-deals-logo img { max-width: 70px; }
+  .about-site-header .site-nav a { padding-inline: 4px; font-size: 12.5px; }
+  .about-hero-content p { font-size: 10px; }
+  .about-reasons-card { padding: 10px; }
+  .about-team-tags span { padding-inline: 4px; }
+}

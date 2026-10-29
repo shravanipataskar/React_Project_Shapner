@@ -1,0 +1,467 @@
+
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap");
+
+/* ========================================
+   PAGE LAYOUT
+======================================== */
+
+html:has(.sharpner-create-video) {
+  zoom: 1;
+}
+
+html:has(.sharpner-create-video),
+body:has(.sharpner-create-video),
+#root:has(.sharpner-create-video) {
+  background: #191919;
+}
+
+.sharpner-create-video {
+  --create-yellow: #ffd600;
+  --create-black: #191919;
+  --create-card: #242424;
+  --create-border: rgba(255, 214, 0, 0.42);
+
+  display: flex;
+  min-height: 100vh;
+  background: var(--create-black);
+  color: #ffffff;
+  font-family: "Outfit", Arial, sans-serif;
+  font-size: 14px;
+}
+
+.sharpner-create-video,
+.sharpner-create-video * {
+  box-sizing: border-box;
+}
+
+.sharpner-create-video button,
+.sharpner-create-video input,
+.sharpner-create-video select,
+.sharpner-create-video a {
+  font-family: inherit;
+}
+
+/* ========================================
+   SIDEBAR
+======================================== */
+
+.create-video-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+
+  width: 280px;
+  min-height: 100vh;
+  overflow-y: auto;
+
+  background: var(--create-yellow);
+  color: #111111;
+}
+
+.create-video-sidebar-brand {
+  height: 124px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-video-sidebar-brand a {
+  color: #ffffff;
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+}
+
+.create-video-navigation {
+  padding: 12px 20px 28px;
+}
+
+.create-video-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  min-height: 49px;
+  margin-bottom: 1px;
+  padding: 12px 13px;
+
+  border-left: 3px solid transparent;
+  border-radius: 5px;
+
+  color: #111111;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+
+  transition: background 0.2s ease;
+}
+
+.create-video-nav-link:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.create-video-nav-active {
+  border-left-color: rgba(100, 75, 0, 0.65);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.create-video-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 16px;
+  flex-shrink: 0;
+
+  color: #ffffff;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.create-video-signout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  width: calc(100% - 36px);
+  min-height: 56px;
+  margin: 40px 18px 0;
+  padding: 12px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: #dc2940;
+  box-shadow: 0 4px 12px rgba(150, 0, 0, 0.12);
+
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.create-video-signout:hover {
+  background: #bd2035;
+}
+
+.create-video-signout span {
+  font-size: 21px;
+}
+
+/* ========================================
+   MAIN CONTENT
+======================================== */
+
+.create-video-main {
+  width: calc(100% - 280px);
+  min-width: 0;
+  min-height: 100vh;
+
+  margin-left: 280px;
+  padding: 48px 40px 40px;
+
+  background: var(--create-black);
+}
+
+/* ========================================
+   PAGE HEADING
+======================================== */
+
+.create-video-header {
+  margin-bottom: 18px;
+}
+
+.create-video-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  margin: 0;
+
+  color: var(--create-yellow);
+  font-size: 29px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.create-video-heading-icon {
+  display: inline-block;
+  font-size: 27px;
+  line-height: 1;
+}
+
+/* ========================================
+   FORM CARD
+======================================== */
+
+.create-video-card {
+  width: 100%;
+  min-height: 460px;
+
+  padding: 56px 44px 43px;
+
+  border: 1px solid var(--create-border);
+  border-radius: 15px;
+
+  background: var(--create-card);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.1);
+}
+
+.create-video-card form {
+  width: 100%;
+}
+
+/* ========================================
+   FORM FIELDS
+======================================== */
+
+.create-video-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  margin-bottom: 36px;
+}
+
+.create-video-field label {
+  color: var(--create-yellow);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.create-video-field input,
+.create-video-field select {
+  display: block;
+  width: 100%;
+  height: 51px;
+
+  padding: 0 16px;
+
+  border: 2px solid rgba(255, 214, 0, 0.35);
+  border-radius: 12px;
+  outline: none;
+
+  background: #2d2d2d;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.create-video-field input::placeholder {
+  color: #999999;
+  opacity: 1;
+}
+
+.create-video-field input:focus,
+.create-video-field select:focus {
+  border-color: var(--create-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.08);
+}
+
+.create-video-field select {
+  cursor: pointer;
+}
+
+.create-video-field select option {
+  background: #2d2d2d;
+  color: #ffffff;
+}
+
+/* ========================================
+   FORM BUTTONS
+======================================== */
+
+.create-video-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  margin-top: -11px;
+}
+
+.create-video-save,
+.create-video-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 33px;
+  padding: 6px 17px;
+
+  border: none;
+  border-radius: 9px;
+
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.create-video-save {
+  background: #2864ed;
+}
+
+.create-video-save:hover {
+  background: #1e53ce;
+  transform: translateY(-1px);
+}
+
+.create-video-save span {
+  color: #ffb000;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.create-video-cancel {
+  background: #46566d;
+}
+
+.create-video-cancel:hover {
+  background: #36465b;
+  transform: translateY(-1px);
+}
+
+/* ========================================
+   MOBILE NAVIGATION
+======================================== */
+
+.create-video-mobile-toggle,
+.create-video-backdrop {
+  display: none;
+}
+
+/* ========================================
+   RESPONSIVE: LAPTOPS
+======================================== */
+
+@media (max-width: 1200px) {
+  .create-video-main {
+    padding: 30px 25px;
+  }
+
+  .create-video-header h1 {
+    font-size: 25px;
+  }
+
+  .create-video-card {
+    padding: 40px 30px;
+  }
+}
+
+/* ========================================
+   RESPONSIVE: TABLETS
+======================================== */
+
+@media (max-width: 850px) {
+  .create-video-sidebar {
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .create-video-sidebar.create-video-sidebar-open {
+    transform: translateX(0);
+  }
+
+  .create-video-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+
+    display: block;
+
+    border: none;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .create-video-mobile-toggle {
+    position: fixed;
+    top: 15px;
+    left: 16px;
+    z-index: 1100;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 43px;
+    height: 43px;
+
+    border: 1px solid rgba(255, 214, 0, 0.4);
+    border-radius: 8px;
+
+    background: var(--create-yellow);
+    color: #111111;
+
+    font-size: 23px;
+    cursor: pointer;
+  }
+
+  .create-video-main {
+    width: 100%;
+    margin-left: 0;
+    padding: 82px 24px 30px;
+  }
+
+  .create-video-header {
+    margin-bottom: 25px;
+  }
+}
+
+/* ========================================
+   RESPONSIVE: MOBILE
+======================================== */
+
+@media (max-width: 520px) {
+  .create-video-main {
+    padding: 76px 14px 24px;
+  }
+
+  .create-video-header h1 {
+    gap: 8px;
+    font-size: 22px;
+  }
+
+  .create-video-heading-icon {
+    font-size: 22px;
+  }
+
+  .create-video-card {
+    min-height: 0;
+    padding: 25px 17px;
+    border-radius: 11px;
+  }
+
+  .create-video-field {
+    gap: 9px;
+    margin-bottom: 24px;
+  }
+
+  .create-video-field label {
+    font-size: 13px;
+  }
+
+  .create-video-field input,
+  .create-video-field select {
+    height: 46px;
+    font-size: 13px;
+  }
+
+  .create-video-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

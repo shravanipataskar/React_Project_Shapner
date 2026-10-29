@@ -1,0 +1,217 @@
+
+/* =========================================
+   SHARPNER COMMUNITY GUIDELINES
+========================================= */
+
+html:has(.community-page),
+#root:has(.community-page) {
+  background: #1a1a1a;
+}
+
+.community-page {
+  background: #1a1a1a;
+  color: #e0e0e0;
+  font-family: "Outfit", sans-serif;
+  width: 100%;
+  flex: 1;
+}
+
+#root:has(.community-page) {
+  min-height: 124.5vh;
+}
+
+#root:has(.community-page) .site-main {
+  display: flex;
+  background: #1a1a1a;
+}
+
+#root:has(.community-page) .brand-deals-header {
+  min-height: 116px;
+  padding-inline: 12vw 10.2vw;
+  border-bottom: 2px solid #ffd700;
+}
+
+#root:has(.community-page) .brand-deals-logo img {
+  height: 96px;
+}
+
+#root:has(.community-page) .footer-section {
+  border-top: 2px solid #ffd700;
+}
+
+#root:has(.community-page) .footer-main {
+  padding: 8px 35px;
+}
+
+#root:has(.community-page) .footer-brand h4 {
+  font-size: 31.25px;
+}
+
+#root:has(.community-page) .footer-brand p {
+  font-size: 16.25px;
+}
+
+#root:has(.community-page) .footer-follow {
+  gap: 8px;
+  padding: 8px 18px;
+}
+
+#root:has(.community-page) .footer-follow a {
+  width: 30px;
+  height: 30px;
+}
+
+#root:has(.community-page) .footer-links a {
+  padding-inline: 14.5px;
+  font-size: 15.625px;
+}
+
+#root:has(.community-page) .footer-bottom {
+  padding: 7px 35px;
+  font-size: 15px;
+}
+
+.community-page *,
+.community-page *::before,
+.community-page *::after {
+  box-sizing: border-box;
+}
+
+.community-section {
+  min-height: 632px;
+  padding: 52px 20px 80px;
+  background: #1a1a1a;
+}
+
+.community-container {
+  width: 100%;
+  max-width: 880px;
+  min-height: 416px;
+  margin: 0 auto;
+  padding: 48px;
+  background: #1a1a1a;
+  border: 2px solid rgba(255, 215, 0, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.community-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 36px;
+  color: #ffd700;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.community-title span {
+  flex-shrink: 0;
+  font-size: 36px;
+}
+
+.community-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.community-points li {
+  position: relative;
+  padding: 10px 0 10px 26px;
+  color: #e0e0e0;
+  font-size: 18.75px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.community-points li::before {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  color: #ffd700;
+  font-size: 22.5px;
+  content: "●";
+}
+
+/* Tablet */
+
+@media (max-width: 768px) {
+  #root:has(.community-page) {
+    min-height: 125vh;
+  }
+
+  #root:has(.community-page) .brand-deals-header {
+    min-height: 88px;
+    padding: 4px 24px;
+  }
+
+  #root:has(.community-page) .brand-deals-logo img {
+    height: 76px;
+  }
+
+  #root:has(.community-page) .footer-main {
+    padding: 8px 20px;
+  }
+
+  .community-section {
+    min-height: 600px;
+    padding: 40px 20px 60px;
+  }
+
+  .community-container {
+    min-height: auto;
+    padding: 35px 30px;
+  }
+
+  .community-title {
+    gap: 12px;
+    font-size: 40px;
+  }
+
+  .community-title span {
+    font-size: 37.5px;
+  }
+
+  .community-points li {
+    font-size: 20px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 480px) {
+  .community-section {
+    min-height: 550px;
+    padding: 30px 16px 45px;
+  }
+
+  .community-container {
+    padding: 28px 20px;
+    border-radius: 13px;
+  }
+
+  .community-title {
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 28px;
+    font-size: 31.25px;
+    line-height: 1.4;
+  }
+
+  .community-title span {
+    font-size: 31.25px;
+  }
+
+  .community-points li {
+    padding: 10px 0 10px 24px;
+    font-size: 18.75px;
+    line-height: 1.7;
+  }
+
+  .community-points li::before {
+    top: 10px;
+    font-size: 22.5px;
+  }
+}

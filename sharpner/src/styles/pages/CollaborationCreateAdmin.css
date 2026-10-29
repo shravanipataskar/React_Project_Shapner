@@ -1,0 +1,294 @@
+.collaboration-create-main {
+  min-width: 0;
+}
+
+.collaboration-create-header {
+  align-items: flex-start;
+  margin-bottom: clamp(38px, 2.61vw, 50px);
+}
+
+.collaboration-create-header h1 {
+  min-width: 0;
+}
+
+.collaboration-create-back {
+  display: inline-flex;
+  min-height: clamp(29px, 2.04vw, 39px);
+  align-items: center;
+  justify-content: center;
+  margin-top: clamp(4px, 0.52vw, 10px);
+  padding: clamp(6px, 0.47vw, 9px) clamp(10px, 0.78vw, 15px);
+  border-radius: 9px;
+  background: #46576e;
+  color: #fff;
+  font-size: clamp(11px, 0.73vw, 14px);
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.collaboration-create-card {
+  min-height: 0;
+  padding: clamp(40px, 3.4vw, 65px)
+    clamp(40px, 2.9vw, 56px) clamp(28px, 2vw, 38px);
+}
+
+.collaboration-create-form {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: clamp(32px, 2.61vw, 50px);
+}
+
+.collaboration-create-section {
+  min-width: 0;
+}
+
+.collaboration-create-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(18px, 1.56vw, 30px);
+  row-gap: clamp(32px, 2.82vw, 54px);
+}
+
+.collaboration-create-section-title {
+  margin: 0 0 clamp(20px, 1.56vw, 30px);
+  color: #ffd600;
+  font-size: clamp(24px, 1.77vw, 34px);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.collaboration-create-section.is-promotion {
+  margin-top: clamp(-12px, -0.63vw, -8px);
+}
+
+.collaboration-create-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: clamp(9px, 0.78vw, 15px);
+  color: #ffd600;
+  font-size: clamp(12px, 0.83vw, 16px);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.collaboration-create-field.is-full-width {
+  grid-column: 1 / -1;
+}
+
+.collaboration-create-field > input,
+.collaboration-create-field > select,
+.collaboration-create-field > textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: clamp(48px, 3.1vw, 60px);
+  padding: 8px clamp(14px, 1.04vw, 20px);
+  border: 1px solid rgba(255, 214, 0, 0.4);
+  border-radius: 12px;
+  outline: none;
+  background: #303030;
+  box-shadow: 0 4px 12px rgba(255, 214, 0, 0.07);
+  color: #fff;
+  font-family: inherit;
+  font-size: clamp(13px, 0.83vw, 16px);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.collaboration-create-field > select {
+  color-scheme: dark;
+}
+
+.collaboration-create-field > select:invalid {
+  color: #d3d3d3;
+}
+
+.collaboration-create-field > textarea {
+  height: clamp(84px, 5.2vw, 100px);
+  resize: vertical;
+}
+
+.collaboration-create-field > input:focus,
+.collaboration-create-field > select:focus,
+.collaboration-create-field > textarea:focus {
+  border-color: #ffd600;
+  box-shadow: 0 0 0 2px rgba(255, 214, 0, 0.15);
+}
+
+.collaboration-create-commercial {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(12px, 0.78vw, 15px);
+  color: #ffd600;
+  font-size: clamp(12px, 0.73vw, 14px);
+  font-weight: 700;
+}
+
+.collaboration-create-commercial input {
+  appearance: none;
+  width: clamp(20px, 1.15vw, 22px);
+  height: clamp(20px, 1.15vw, 22px);
+  margin: 0;
+  border: 2px solid #ffd600;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.collaboration-create-commercial input:checked {
+  background: #ffd600;
+  box-shadow: inset 0 0 0 4px #fff;
+}
+
+.collaboration-create-commercial input:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.collaboration-create-actions {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 0.73vw, 14px);
+  margin-top: clamp(4px, 0.42vw, 8px);
+}
+
+.collaboration-create-actions .talent-show-button {
+  min-height: clamp(28px, 1.82vw, 35px);
+  padding: clamp(6px, 0.42vw, 8px) clamp(11px, 0.73vw, 14px);
+  border-radius: 7px;
+  font-size: clamp(10px, 0.63vw, 12px);
+  text-decoration: none;
+}
+
+@media (min-width: 851px) {
+  .sharpner-dashboard.collaborations-admin.collaboration-create-admin
+    .dashboard-main {
+    width: calc(100% - clamp(203px, 18.3vw, 350px));
+    margin-left: clamp(203px, 18.3vw, 350px);
+    padding: clamp(50px, 3.13vw, 60px) clamp(36px, 2.61vw, 50px)
+      30px clamp(36px, 2.61vw, 50px);
+  }
+
+  .collaboration-create-admin .dashboard-sidebar {
+    width: clamp(203px, 18.3vw, 350px);
+  }
+
+  .collaboration-create-header {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 1200px) {
+  .collaboration-create-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 38px;
+  }
+
+  .collaboration-create-header h1 {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 850px) {
+  .collaboration-create-main {
+    padding-top: 82px;
+  }
+
+  .collaboration-create-card {
+    padding: 26px;
+  }
+}
+
+@media (max-width: 700px) {
+  .collaboration-create-header {
+    align-items: flex-start;
+  }
+
+  .collaboration-create-header h1 {
+    font-size: 24px;
+  }
+
+  .collaboration-create-header h1 span {
+    font-size: 23px;
+  }
+
+  .collaboration-create-back {
+    flex: 0 0 auto;
+  }
+
+  .collaboration-create-card {
+    padding: 24px 18px;
+  }
+
+  .collaboration-create-form {
+    gap: 30px;
+  }
+
+  .collaboration-create-fields {
+    row-gap: 26px;
+  }
+
+  .collaboration-create-section-title {
+    font-size: 19px;
+  }
+
+  .collaboration-create-section.is-promotion {
+    margin-top: 0;
+  }
+
+  .collaboration-create-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .collaboration-create-field.is-full-width {
+    grid-column: auto;
+  }
+
+  .collaboration-create-field {
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .collaboration-create-field > input,
+  .collaboration-create-field > select {
+    min-height: 44px;
+  }
+
+  .collaboration-create-field > textarea {
+    height: 110px;
+  }
+
+  .collaboration-create-actions .talent-show-button {
+    min-height: 36px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .collaboration-create-main {
+    padding-inline: 15px;
+  }
+
+  .collaboration-create-header {
+    align-items: center;
+  }
+
+  .collaboration-create-header h1 {
+    font-size: 20px;
+  }
+
+  .collaboration-create-header h1 span {
+    font-size: 20px;
+  }
+
+  .collaboration-create-card {
+    padding: 20px 14px;
+  }
+}

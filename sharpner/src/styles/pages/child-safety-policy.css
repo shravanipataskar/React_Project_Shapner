@@ -1,0 +1,156 @@
+
+/* ==========================================
+   SHARPNER CHILD SAFETY POLICY
+========================================== */
+
+.child-safety-page {
+  --policy-bg: #1a1a1a;
+  --policy-gold: #ffd700;
+  --policy-text: #f5f5f5;
+
+  min-height: 100vh;
+  background: var(--policy-bg);
+  color: var(--policy-text);
+  font-family: "Outfit", sans-serif;
+  font-size: 17.5px;
+  line-height: 1.7;
+}
+
+.child-safety-page *,
+.child-safety-page *::before,
+.child-safety-page *::after {
+  box-sizing: border-box;
+}
+
+.child-safety-page .legal-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-right: 24px;
+  padding-left: 24px;
+}
+
+/* Page heading */
+
+.child-safety-page .legal-hero {
+  padding: 48px 0 96px;
+  text-align: center;
+}
+
+.child-safety-page .legal-hero h1 {
+  margin: 0 0 8px;
+  color: var(--policy-gold);
+  font-size: 50px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-shadow: 0 0 16px rgba(255, 215, 0, 0.12);
+}
+
+.child-safety-page .legal-hero p {
+  margin: 0;
+  color: #f5f5f5;
+  font-size: 17.5px;
+  line-height: 1.8;
+}
+
+/* Policy content */
+
+.child-safety-page .legal-content {
+  padding: 8px 0 64px;
+}
+
+.child-safety-page .legal-policy-section {
+  margin-bottom: 16px;
+}
+
+.child-safety-page .legal-policy-section h2 {
+  margin: 0 0 4px;
+  color: var(--policy-gold);
+  font-size: 35px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.child-safety-page .legal-policy-section p {
+  margin: 0;
+  color: var(--policy-text);
+  font-size: 17.5px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+
+.child-safety-page .legal-last-updated {
+  margin: 22px 0 0;
+  color: var(--policy-text);
+  font-size: 17.5px;
+  line-height: 1.8;
+}
+
+.child-safety-page .legal-last-updated strong {
+  font-weight: 800;
+}
+
+/* Tablet */
+
+@media (max-width: 768px) {
+  .child-safety-page .legal-hero {
+    padding: 42px 0 64px;
+  }
+
+  .child-safety-page .legal-hero h1 {
+    font-size: 42.5px;
+  }
+
+  .child-safety-page .legal-content {
+    padding-top: 8px;
+    padding-bottom: 48px;
+  }
+
+  .child-safety-page .legal-policy-section h2 {
+    font-size: 30px;
+  }
+
+  .child-safety-page .legal-policy-section p {
+    font-size: 17.5px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 480px) {
+  .child-safety-page .legal-container {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .child-safety-page .legal-hero {
+    padding: 36px 0 48px;
+  }
+
+  .child-safety-page .legal-hero h1 {
+    font-size: 36.25px;
+  }
+
+  .child-safety-page .legal-hero p {
+    font-size: 16.25px;
+  }
+
+  .child-safety-page .legal-policy-section {
+    margin-bottom: 20px;
+  }
+
+  .child-safety-page .legal-policy-section h2 {
+    font-size: 26.25px;
+    line-height: 1.4;
+  }
+
+  .child-safety-page .legal-policy-section p {
+    font-size: 16.25px;
+    line-height: 1.8;
+  }
+
+  .child-safety-page .legal-last-updated {
+    font-size: 16.25px;
+  }
+}
+

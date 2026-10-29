@@ -1,0 +1,643 @@
+
+/* ==========================================
+   SHARPNER - CREATIVE IDEA SUBMISSION PAGE
+   ========================================== */
+
+.creative-submission-page {
+  --creative-yellow: #ffd500;
+  --creative-gold: #a98d00;
+  --creative-background: #1a1a1a;
+  --creative-card: #302e20;
+  --creative-text: #f2f2f2;
+
+  width: 100%;
+  min-height: 760px;
+  padding: 48px 24px 60px;
+  color: var(--creative-text);
+  background: var(--creative-background);
+  font-family: "Outfit", sans-serif;
+  box-sizing: border-box;
+}
+
+.creative-submission-page *,
+.creative-submission-page *::before,
+.creative-submission-page *::after {
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   MAIN CONTAINER
+   ========================================== */
+
+.creative-submission-container {
+  width: 100%;
+  max-width: 1170px;
+  margin: 0 auto;
+}
+
+/* ==========================================
+   PAGE HEADING
+   ========================================== */
+
+.creative-submission-heading {
+  margin-bottom: 50px;
+  text-align: center;
+}
+
+.creative-submission-heading h1 {
+  position: relative;
+  margin: 0 0 24px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 213, 0, 0.25);
+  color: var(--creative-yellow);
+  font-size: 26.25px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.creative-submission-heading h1::after {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 90px;
+  height: 4px;
+  content: "";
+  transform: translateX(-50%);
+  border-radius: 10px;
+  background: var(--creative-yellow);
+  box-shadow: 0 0 12px rgba(255, 213, 0, 0.35);
+}
+
+.creative-submission-heading p {
+  max-width: 760px;
+  margin: 0 auto;
+  color: #c3c3c3;
+  font-size: 22.5px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+
+/* ==========================================
+   THREE-COLUMN LAYOUT
+   ========================================== */
+
+.creative-submission-layout {
+  display: grid;
+  grid-template-columns: 275px minmax(0, 1fr) 220px;
+  align-items: start;
+  gap: 24px;
+}
+
+/* ==========================================
+   SUBMISSION STEPS
+   ========================================== */
+
+.creative-steps-card {
+  padding: 23px 24px;
+  border: 1px solid rgba(255, 213, 0, 0.48);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #363223, #29271d);
+}
+
+.creative-steps-card h2 {
+  margin: 0 0 24px;
+  color: var(--creative-yellow);
+  font-size: 28.75px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.creative-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 23px;
+}
+
+.creative-step {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 18px;
+  color: #a7a39a;
+  font-size: 16.25px;
+  font-weight: 700;
+}
+
+.creative-step-number {
+  display: flex;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #927800;
+  border-radius: 50%;
+  color: #bba000;
+  background: transparent;
+  font-size: 17.5px;
+  font-weight: 800;
+}
+
+.creative-step.active,
+.creative-step.completed {
+  color: #fff;
+}
+
+.creative-step.active .creative-step-number,
+.creative-step.completed .creative-step-number {
+  border-color: var(--creative-yellow);
+  color: #111;
+  background: var(--creative-yellow);
+}
+
+/* ==========================================
+   FORM CARD
+   ========================================== */
+
+.creative-form-card {
+  min-width: 0;
+  padding: 30px;
+  border: 1px solid rgba(255, 213, 0, 0.5);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #363223, #2d2b20);
+}
+
+.creative-form-step {
+  min-width: 0;
+}
+
+.creative-form-title {
+  display: flex;
+  min-height: 69px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 213, 0, 0.35);
+  border-radius: 5px 5px 0 0;
+  background: rgba(255, 213, 0, 0.09);
+}
+
+.creative-form-title h2 {
+  margin: 0;
+  color: var(--creative-yellow);
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.creative-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0 24px 24px;
+}
+
+.creative-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.creative-field > label {
+  margin-bottom: 12px;
+  color: var(--creative-yellow);
+  font-size: 16.25px;
+  font-weight: 700;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.creative-field > label > span:not(.creative-optional) {
+  color: #ff554d;
+}
+
+.creative-optional {
+  color: #bcb7a8;
+  font-weight: 400;
+}
+
+/* ==========================================
+   INPUTS AND TEXTAREAS
+   ========================================== */
+
+.creative-submission-page input[type="text"],
+.creative-submission-page input[type="email"],
+.creative-submission-page textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 59px;
+  padding: 16px 20px;
+  border: 2px solid rgba(255, 213, 0, 0.35);
+  border-radius: 13px;
+  outline: none;
+  color: #fff;
+  background: #242424;
+  font-family: inherit;
+  font-size: 17.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.creative-submission-page input::placeholder,
+.creative-submission-page textarea::placeholder {
+  color: #9b9b9b;
+  opacity: 1;
+}
+
+.creative-submission-page input:focus,
+.creative-submission-page textarea:focus {
+  border-color: var(--creative-yellow);
+  box-shadow: 0 0 12px rgba(255, 213, 0, 0.12);
+}
+
+.creative-submission-page textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* ==========================================
+   VALIDATION MESSAGES
+   ========================================== */
+
+.creative-error {
+  display: block;
+  margin-top: 8px;
+  color: #ff8b82;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.creative-submit-error {
+  margin: 0 24px 20px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 80, 70, 0.45);
+  border-radius: 8px;
+  color: #ffaaa4;
+  background: rgba(255, 80, 70, 0.08);
+  font-size: 16.25px;
+  line-height: 1.5;
+}
+
+/* ==========================================
+   PERMISSION RADIO BUTTONS
+   ========================================== */
+
+.creative-permission-step .creative-form-fields {
+  padding-top: 0;
+}
+
+.creative-permission-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  min-height: 108px;
+  padding: 20px;
+  border: 2px solid rgba(255, 213, 0, 0.35);
+  border-radius: 14px;
+}
+
+.creative-radio-option {
+  display: inline-flex;
+  min-width: 111px;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border: 2px solid #e3dfd2;
+  border-radius: 11px;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+  font-size: 17.5px;
+  font-weight: 700;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.creative-radio-option:hover,
+.creative-radio-option.selected {
+  border-color: var(--creative-yellow);
+}
+
+.creative-radio-option input[type="radio"] {
+  width: 21px;
+  height: 21px;
+  margin: 0;
+  accent-color: var(--creative-yellow);
+  cursor: pointer;
+}
+
+/* ==========================================
+   NAVIGATION BUTTONS
+   ========================================== */
+
+.creative-form-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.creative-previous-button,
+.creative-next-button,
+.creative-submit-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16.25px;
+  font-weight: 800;
+  line-height: 1.3;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.creative-previous-button {
+  color: #fff;
+  background: #48566c;
+}
+
+.creative-previous-button:hover {
+  background: #596a83;
+  transform: translateY(-1px);
+}
+
+.creative-next-button,
+.creative-submit-button {
+  color: #111;
+  background: linear-gradient(135deg, #ffdc00, #ffc000);
+  box-shadow: 0 7px 20px rgba(255, 213, 0, 0.22);
+}
+
+.creative-next-button:hover,
+.creative-submit-button:hover {
+  box-shadow: 0 9px 25px rgba(255, 213, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+.creative-next-button,
+.creative-submit-button {
+  margin-left: auto;
+}
+
+.creative-submit-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+/* ==========================================
+   CHILD IMAGE
+   ========================================== */
+
+.creative-child-image {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 25px;
+}
+
+.creative-child-image img {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+  object-position: center top;
+}
+
+/* ==========================================
+   SUCCESS MODAL OVERLAY
+   ========================================== */
+
+.idea-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.72);
+  animation: ideaOverlayFadeIn 0.2s ease-out;
+}
+
+/* ==========================================
+   SUCCESS MODAL
+   ========================================== */
+
+.idea-success-modal {
+  width: 100%;
+  max-width: 500px;
+  min-height: 360px;
+  padding: 65px 40px 45px;
+  border: 2px solid #8f7800;
+  border-radius: 9px;
+  background: #242424;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.idea-success-icon {
+  margin-bottom: 35px;
+  font-size: 66.25px;
+  line-height: 1;
+}
+
+.idea-success-modal h2 {
+  margin: 0 0 8px;
+  color: var(--creative-yellow);
+  font-size: 35px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.idea-success-modal p {
+  max-width: 390px;
+  margin: 0 auto 32px;
+  color: #bdbdbd;
+  font-size: 17.5px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.idea-success-ok {
+  min-width: 48px;
+  min-height: 32px;
+  padding: 7px 15px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  background: #2864e8;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 17.5px;
+  font-weight: 700;
+  transition: background 0.2s ease;
+}
+
+.idea-success-ok:hover {
+  background: #1c52c5;
+}
+
+.idea-success-ok:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+
+@keyframes ideaOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==========================================
+   TABLET RESPONSIVENESS
+   ========================================== */
+
+@media (max-width: 1050px) {
+  .creative-submission-layout {
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .creative-child-image {
+    display: none;
+  }
+
+  .creative-form-card {
+    padding: 24px;
+  }
+
+  .creative-steps-card {
+    padding: 22px 18px;
+  }
+
+  .creative-steps-card h2 {
+    font-size: 25px;
+  }
+}
+
+/* ==========================================
+   MOBILE RESPONSIVENESS
+   ========================================== */
+
+@media (max-width: 650px) {
+  .creative-submission-page {
+    min-height: auto;
+    padding: 35px 16px 45px;
+  }
+
+  .creative-submission-heading {
+    margin-bottom: 30px;
+  }
+
+  .creative-submission-heading h1 {
+    font-size: 23.75px;
+  }
+
+  .creative-submission-heading p {
+    font-size: 18.75px;
+    line-height: 1.7;
+  }
+
+  .creative-submission-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .creative-steps-card {
+    padding: 20px;
+  }
+
+  .creative-steps-card h2 {
+    margin-bottom: 20px;
+  }
+
+  .creative-steps-list {
+    gap: 15px;
+  }
+
+  .creative-form-card {
+    padding: 16px;
+  }
+
+  .creative-form-title {
+    min-height: 60px;
+    margin-bottom: 25px;
+    padding: 12px;
+  }
+
+  .creative-form-title h2 {
+    font-size: 22.5px;
+  }
+
+  .creative-form-fields {
+    gap: 22px;
+    padding: 0 4px 15px;
+  }
+
+  .creative-permission-options {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .creative-radio-option {
+    min-width: 100px;
+  }
+
+  .creative-form-navigation {
+    margin-top: 20px;
+  }
+
+  .creative-previous-button,
+  .creative-next-button,
+  .creative-submit-button {
+    padding: 11px 13px;
+    font-size: 15px;
+  }
+
+  .idea-modal-overlay {
+    padding: 18px;
+  }
+
+  .idea-success-modal {
+    min-height: auto;
+    padding: 45px 23px 35px;
+  }
+
+  .idea-success-icon {
+    margin-bottom: 30px;
+    font-size: 60px;
+  }
+
+  .idea-success-modal h2 {
+    font-size: 30px;
+  }
+
+  .idea-success-modal p {
+    font-size: 16.25px;
+  }
+}
+
