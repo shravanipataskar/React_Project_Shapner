@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import PublicLayout from '../components/layout/PublicLayout.jsx';
 
@@ -57,6 +57,7 @@ function AppRouter() {
          <Route path="/admin/ideas" element={<CreativeIdeasAdmin />} />
          <Route path="/admin/ideas/inactive" element={<CreativeIdeasAdmin />} />
          <Route path="/admin/ideas/create" element={<CreativeIdeaCreateAdmin />} />
+         <Route path="/admin/creative-ideas" element={<Navigate to="/admin/ideas" replace />} />
          <Route path="/admin/collaborations" element={<CollaborationsAdmin />} />
          <Route path="/admin/collaborations/inactive" element={<CollaborationsAdmin />} />
          <Route path="/admin/collaborations/create" element={<CollaborationCreateAdmin />} />

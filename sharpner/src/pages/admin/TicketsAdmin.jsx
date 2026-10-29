@@ -56,7 +56,7 @@ function TicketsAdmin() {
         <header className="tickets-header">
           <h1>
             <span aria-hidden="true">
-              🎟️
+              🎫
             </span>
             {statusFilter === 'inactive' ? 'Inactive Tickets' : 'Manage Tickets'}
           </h1>
