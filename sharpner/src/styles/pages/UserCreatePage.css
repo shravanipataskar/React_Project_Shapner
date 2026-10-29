@@ -145,6 +145,16 @@ body:has(.user-create),
   outline-offset: 2px;
 }
 
+.user-edit-message {
+  margin: 0 0 18px;
+  color: #e6e6e6;
+  font-size: 14px;
+}
+
+.user-edit-message.is-error {
+  color: #ff9a9a;
+}
+
 @media (max-width: 1200px) and (min-width: 851px) {
   .sharpner-dashboard.user-create .dashboard-main {
     padding: 30px 25px;

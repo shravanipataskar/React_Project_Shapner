@@ -74,3 +74,151 @@ input {
   scrollbar-width: thin;
   scrollbar-color: #ffd700 #2a2a2a;
 }
+
+:is(
+    .sharpner-dashboard,
+    .sharpner-auditions-page,
+    .sharpner-videos-page,
+    .sharpner-dhol-page
+  )
+  :is(
+    button:not(
+        :where(
+          .dashboard-mobile-toggle,
+          .auditions-mobile-toggle,
+          .videos-mobile-toggle,
+          .dhol-mobile-toggle,
+          .dashboard-sidebar-backdrop,
+          .auditions-sidebar-backdrop,
+          .videos-sidebar-backdrop,
+          .dhol-sidebar-backdrop
+        )
+      ),
+    a[class*="button"],
+    a[class$="-back"],
+    .videos-header-actions .videos-add-new-link,
+    .dashboard-action,
+    .tickets-create-add-item
+  ):not(:disabled) {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    filter 0.2s ease;
+}
+
+:is(
+    .sharpner-dashboard,
+    .sharpner-auditions-page,
+    .sharpner-videos-page,
+    .sharpner-dhol-page
+  )
+  :is(
+    button:not(
+        :where(
+          .dashboard-mobile-toggle,
+          .auditions-mobile-toggle,
+          .videos-mobile-toggle,
+          .dhol-mobile-toggle,
+          .dashboard-sidebar-backdrop,
+          .auditions-sidebar-backdrop,
+          .videos-sidebar-backdrop,
+          .dhol-sidebar-backdrop
+        )
+      ),
+    a[class*="button"],
+    a[class$="-back"],
+    .videos-add-new-link,
+    .dashboard-action,
+    .tickets-create-add-item
+  ):not(:disabled):hover {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  text-decoration: underline;
+  text-decoration-color: #ffd600;
+  text-underline-offset: 2px;
+  transform: translateY(-1px);
+}
+
+:is(.sharpner-dashboard, .sharpner-auditions-page, .sharpner-videos-page, .sharpner-dhol-page)
+  :is(
+    .talent-show-button.talent-show-button-view,
+    .auditions-row-actions .auditions-view-button,
+    .videos-row-actions .videos-view-button,
+    .dhol-row-actions .dhol-view-button
+  ):hover:not(:disabled) {
+  background-color: #008fc3;
+  color: #ffd600;
+  box-shadow:
+    0 0 18px rgba(0, 153, 204, 0.45),
+    0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+:is(.sharpner-dashboard, .sharpner-auditions-page, .sharpner-videos-page, .sharpner-dhol-page)
+  :is(
+    .talent-show-button.talent-show-button-edit,
+    .talent-show-button.talent-show-button-add,
+    .auditions-row-actions .auditions-edit-button,
+    .auditions-header-actions .auditions-add-new-button,
+    .videos-header-actions .videos-add-new-link,
+    .videos-row-actions .videos-edit-button,
+    .dhol-add-button,
+    .dhol-row-actions .dhol-edit-button
+  ):hover:not(:disabled) {
+  background-color: #e78300;
+  color: #ffd600;
+  box-shadow:
+    0 0 18px rgba(255, 190, 0, 0.45),
+    0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+:is(.sharpner-dashboard, .sharpner-auditions-page, .sharpner-videos-page, .sharpner-dhol-page)
+  :is(
+    .talent-show-button.talent-show-button-deactivate,
+    .talent-show-button.talent-show-button-pdf,
+    .talent-show-button.talent-show-button-reset,
+    .auditions-row-actions .auditions-deactivate-button,
+    .auditions-header-actions .auditions-export-pdf,
+    .auditions-search-button.auditions-search-button,
+    .auditions-reset-button.auditions-reset-button,
+    .videos-row-actions .videos-deactivate-button,
+    .videos-reset-button.videos-reset-button,
+    .dhol-row-actions .dhol-deactivate-button,
+    .dhol-reset-button.dhol-reset-button
+  ):hover:not(:disabled) {
+  background-color: #e5232b;
+  filter: none;
+  text-decoration: none;
+  box-shadow:
+    0 0 18px rgba(223, 37, 40, 0.5),
+    0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+:is(.sharpner-dashboard, .sharpner-auditions-page, .sharpner-videos-page, .sharpner-dhol-page)
+  :is(
+    .talent-show-button.talent-show-button-activate,
+    .talent-show-button.talent-show-button-excel,
+    .auditions-row-actions .auditions-activate-button,
+    .auditions-header-actions .auditions-export-excel,
+    .videos-row-actions .videos-activate-button,
+    .dhol-row-actions .dhol-activate-button
+  ):hover:not(:disabled) {
+  background-color: #128b48;
+  box-shadow:
+    0 0 18px rgba(19, 166, 83, 0.45),
+    0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+:is(.sharpner-dashboard, .sharpner-auditions-page, .sharpner-videos-page, .sharpner-dhol-page)
+  :is(
+    .talent-show-button.talent-show-button-search,
+    .auditions-search-button,
+    .videos-search-button,
+    .dhol-search-button,
+    .collaboration-details-status-actions .talent-show-button
+  ):hover:not(:disabled) {
+  background-color: #e78300;
+  box-shadow:
+    0 0 18px rgba(255, 190, 0, 0.45),
+    0 4px 10px rgba(0, 0, 0, 0.2);
+}

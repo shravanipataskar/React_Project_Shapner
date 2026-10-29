@@ -64,7 +64,8 @@
 }
 
 .creative-idea-create-field > input,
-.creative-idea-create-field > textarea {
+.creative-idea-create-field > textarea,
+.creative-idea-create-field > select {
   display: block;
   width: 100%;
   min-width: 0;
@@ -88,7 +89,8 @@
 }
 
 .creative-idea-create-field > input:focus,
-.creative-idea-create-field > textarea:focus {
+.creative-idea-create-field > textarea:focus,
+.creative-idea-create-field > select:focus {
   border-color: #ffd600;
   box-shadow: 0 0 0 2px rgba(255, 214, 0, 0.15);
 }
@@ -100,6 +102,27 @@
 
 .creative-idea-create-field > input[readonly] {
   cursor: default;
+}
+
+.creative-idea-edit-error,
+.creative-idea-edit-message {
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.creative-idea-edit-error {
+  color: #ff8e8e;
+}
+
+.creative-idea-create-field > select {
+  cursor: pointer;
+}
+
+.creative-idea-create-field > select option {
+  background: #303030;
+  color: #fff;
 }
 
 .creative-idea-create-permission {

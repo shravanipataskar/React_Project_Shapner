@@ -59,3 +59,21 @@ export const videosApi = {
     });
   },
 };
+
+export const usersApi = {
+  getAll() {
+    return request("/users");
+  },
+
+  getById(id) {
+    return request(`/users/${id}`);
+  },
+
+  updateStatus(id, status) {
+    return request(`/users/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  },
+
+};

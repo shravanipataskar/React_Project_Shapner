@@ -198,6 +198,10 @@
   font-size: clamp(10px, 0.63vw, 12px);
 }
 
+.collaborations-table .talent-show-row-actions a {
+  text-decoration: none;
+}
+
 @media (max-width: 1200px) {
   .collaborations-header {
     align-items: flex-start;

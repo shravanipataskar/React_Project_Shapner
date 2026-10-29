@@ -83,6 +83,47 @@ class CollaborationRequestController extends Controller
     }
 
     /**
+     * Update editable Brand Deal fields.
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+            'organization_name' => ['nullable', 'string', 'max:255'],
+            'brand_name' => ['required', 'string', 'max:255'],
+            'contact_person' => ['required', 'string', 'max:255'],
+            'collaboration_type' => ['nullable', 'string', 'max:100'],
+            'email' => ['required', 'email', 'max:255'],
+            'instagram_or_website' => ['nullable', 'string', 'max:2048'],
+            'type_of_promotion' => ['nullable', 'string', 'max:255'],
+            'campaign_goal' => ['nullable', 'string'],
+            'budget_range' => ['nullable', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:50'],
+            'message' => ['nullable', 'string'],
+            'commercial_inquiry' => ['required', 'boolean'],
+            'review_status' => ['required', 'integer', 'in:0,1,2'],
+        ]);
+
+        $collaboration = CollaborationRequest::find($id);
+
+        if (!$collaboration) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Collaboration request not found.',
+            ], 404);
+        }
+
+        $collaboration->fill($validated);
+        $collaboration->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Brand Deal updated successfully.',
+            'data' => $collaboration,
+        ]);
+    }
+
+    /**
      * Update active/inactive status.
      */
     public function updateStatus(Request $request, $id)

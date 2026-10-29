@@ -105,6 +105,41 @@ class IdeaSubmissionController extends Controller
     }
 
     /**
+     * Update editable Creative Idea submission fields.
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'instagram' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'review_status' => ['required', 'integer', 'in:0,1,2'],
+            'reel_idea' => ['required', 'string'],
+            'hook_line' => ['required', 'string'],
+            'viral_reason' => ['required', 'string'],
+            'credit_permission' => ['required', 'boolean'],
+        ]);
+
+        $idea = IdeaSubmission::find($id);
+
+        if (!$idea) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Creative idea not found.',
+            ], 404);
+        }
+
+        $idea->fill($validated);
+        $idea->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Creative idea updated successfully.',
+            'data' => $idea,
+        ]);
+    }
+
+    /**
      * Update active/inactive status.
      */
     public function updateStatus(Request $request, $id)

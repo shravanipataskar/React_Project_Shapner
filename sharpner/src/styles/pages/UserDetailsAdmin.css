@@ -1,0 +1,167 @@
+.sharpner-dashboard.users-detail {
+  min-height: 100vh;
+  background: #191919;
+  color: #fff;
+  font-family: Outfit, Arial, sans-serif;
+}
+
+.sharpner-dashboard.users-detail .dashboard-main {
+  min-width: 0;
+  background: #191919;
+}
+
+@media (min-width: 851px) {
+  .sharpner-dashboard.users-detail .dashboard-sidebar {
+    width: var(--dashboard-sidebar-width);
+  }
+
+  .sharpner-dashboard.users-detail .dashboard-main {
+    width: calc(100% - var(--dashboard-sidebar-width));
+    margin-left: var(--dashboard-sidebar-width);
+    padding: 42px 41px 30px;
+  }
+}
+
+.users-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 0 5px 42px;
+}
+
+.users-detail-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 0;
+  color: #ffd600;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.users-detail-header h1 span {
+  font-size: 28px;
+  filter: brightness(0) saturate(100%) invert(19%) sepia(57%) saturate(1658%)
+    hue-rotate(231deg) brightness(93%) contrast(91%);
+}
+
+.users-detail-back {
+  display: inline-flex;
+  min-height: 33px;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  border-radius: 9px;
+  background: #46576e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.users-detail-card {
+  min-height: 358px;
+  padding: 48px 45px;
+  border: 1px solid rgba(255, 214, 0, 0.3);
+  border-radius: 16px;
+  background: #232323;
+}
+
+.users-detail-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 36px;
+}
+
+.users-detail-column {
+  display: grid;
+  align-content: start;
+  gap: 21px;
+  margin: 0;
+}
+
+.users-detail-field dt {
+  margin-bottom: 4px;
+  color: #f5f5f5;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.users-detail-field dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #e6e6e6;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.users-status-badge {
+  display: inline-flex;
+  min-width: 70px;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.users-status-badge.is-active {
+  background: #13a653;
+}
+
+.users-status-badge.is-inactive {
+  background: #46576e;
+}
+
+.users-detail-message {
+  margin: 0;
+  color: #e6e6e6;
+  font-size: 14px;
+}
+
+@media (max-width: 850px) {
+  .sharpner-dashboard.users-detail .dashboard-main {
+    width: 100%;
+    margin-left: 0;
+    padding: 82px 24px 30px;
+  }
+
+  .users-detail-header {
+    margin: 0 0 28px;
+  }
+
+  .users-detail-card {
+    min-height: 0;
+    padding: 32px;
+  }
+}
+
+@media (max-width: 600px) {
+  .users-detail-header {
+    align-items: flex-start;
+  }
+
+  .users-detail-header h1 {
+    font-size: 24px;
+  }
+
+  .users-detail-columns {
+    grid-template-columns: 1fr;
+    gap: 21px;
+  }
+
+  .users-detail-card {
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 520px) {
+  .sharpner-dashboard.users-detail .dashboard-main {
+    padding-inline: 15px;
+  }
+}

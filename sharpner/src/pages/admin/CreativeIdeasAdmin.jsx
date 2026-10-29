@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { downloadCsv } from '../../utils/downloadCsv.js'
 import { downloadPdf } from '../../utils/downloadPdf.js'
+import { ideasApi } from '../../services/ideasApi.js'
 
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CreativeIdeasAdmin.css'
@@ -89,6 +90,7 @@ function CreativeIdeasAdmin() {
   const [error, setError] = useState('')
 
   const [selectedIdea, setSelectedIdea] = useState(null)
+  const [changingIdeaIds, setChangingIdeaIds] = useState([])
 
   /*
    * ---------------------------------------------------------
@@ -106,7 +108,10 @@ function CreativeIdeasAdmin() {
 
         console.log('Fetching Creative Ideas from:', API_URL)
 
-        const response = await fetch(API_URL, {
+        const apiUrl = new URL(API_URL)
+        apiUrl.searchParams.set('status', statusFilter === 'active' ? '1' : '0')
+
+        const response = await fetch(apiUrl, {
           method: 'GET',
 
           headers: {
@@ -157,7 +162,44 @@ function CreativeIdeasAdmin() {
     return () => {
       controller.abort()
     }
-  }, [])
+  }, [statusFilter])
+
+  async function handleStatusChange(idea) {
+    const nextStatus = idea.active ? 0 : 1
+
+    if (
+      nextStatus === 0 &&
+      !window.confirm(
+        'Are you sure you want to deactivate this creative idea?',
+      )
+    ) {
+      return
+    }
+
+    setError('')
+    setChangingIdeaIds((previous) => [...previous, idea.id])
+
+    try {
+      await ideasApi.updateStatus(idea.id, nextStatus)
+      setAllIdeas((previous) =>
+        previous.map((item) =>
+          item.id === idea.id
+            ? { ...item, status: nextStatus, active: nextStatus === 1 }
+            : item,
+        ),
+      )
+    } catch (requestError) {
+      console.error('Failed to change creative idea status:', requestError)
+      setError(
+        requestError.message ||
+          `Unable to ${nextStatus ? 'activate' : 'deactivate'} this creative idea.`,
+      )
+    } finally {
+      setChangingIdeaIds((previous) =>
+        previous.filter((id) => id !== idea.id),
+      )
+    }
+  }
 
   /*
    * ---------------------------------------------------------
@@ -575,22 +617,30 @@ function CreativeIdeasAdmin() {
                             View
                           </button>
 
-                          <button
-                            type="button"
-                            className="talent-show-button talent-show-button-edit"
-                            disabled
-                            title="Edit endpoint is not connected yet."
-                          >
-                            Edit
-                          </button>
+                          {!isInactivePage && (
+                            <Link
+                              className="talent-show-button talent-show-button-edit"
+                              to={`/admin/ideas/${encodeURIComponent(idea.id)}/edit`}
+                            >
+                              Edit
+                            </Link>
+                          )}
 
                           <button
                             type="button"
-                            className="talent-show-button talent-show-button-deactivate"
-                            disabled
-                            title="Deactivate endpoint is not connected yet."
+                            className={`talent-show-button ${
+                              idea.active
+                                ? 'talent-show-button-deactivate'
+                                : 'talent-show-button-activate'
+                            }`}
+                            onClick={() => handleStatusChange(idea)}
+                            disabled={changingIdeaIds.includes(idea.id)}
                           >
-                            Deactivate
+                            {changingIdeaIds.includes(idea.id)
+                              ? 'Saving...'
+                              : idea.active
+                                ? 'Deactivate'
+                                : 'Activate'}
                           </button>
 
                         </div>

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
+import { usersApi } from '../../services/api.js'
 import '../../styles/pages/TalentShow.css'
+import '../../styles/pages/UsersAdmin.css'
 
 function UsersAdmin() {
   const { pathname } = useLocation()
@@ -15,9 +17,7 @@ function UsersAdmin() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
-  const apiUrl =
-    import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
+  const [updatingUserId, setUpdatingUserId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -26,14 +26,7 @@ function UsersAdmin() {
       try {
         setLoading(true)
         setError('')
-
-        const response = await fetch(`${apiUrl}/users`)
-
-        if (!response.ok) {
-          throw new Error(`HTTP error ${response.status}`)
-        }
-
-        const result = await response.json()
+        const result = await usersApi.getAll()
 
         if (!result.success) {
           throw new Error(result.message || 'Failed to fetch users')
@@ -46,7 +39,7 @@ function UsersAdmin() {
         console.error('Failed to fetch users:', err)
 
         if (!cancelled) {
-          setError(err.message || 'Failed to load users')
+          setError('Unable to load users. Please try again later.')
           setUsers([])
         }
       } finally {
@@ -61,10 +54,10 @@ function UsersAdmin() {
     return () => {
       cancelled = true
     }
-  }, [apiUrl])
+  }, [])
 
   const visibleUsers = useMemo(() => {
-    const query = search.toLowerCase()
+    const query = statusFilter === 'active' ? search.toLowerCase() : ''
 
     return users.filter((user) => {
       const active = Number(user.status) === 1
@@ -100,6 +93,33 @@ function UsersAdmin() {
     setSearch('')
   }
 
+  async function changeUserStatus(user, nextStatus) {
+    const action = nextStatus ? 'activate' : 'deactivate'
+    const confirmed = window.confirm(
+      `Are you sure you want to ${action} this user?`,
+    )
+
+    if (!confirmed) return
+
+    try {
+      setError('')
+      setUpdatingUserId(user.id)
+      await usersApi.updateStatus(user.id, nextStatus)
+      setUsers((currentUsers) =>
+        currentUsers.map((currentUser) =>
+          currentUser.id === user.id
+            ? { ...currentUser, status: nextStatus ? 1 : 0 }
+            : currentUser,
+        ),
+      )
+    } catch (err) {
+      console.error(`Failed to ${action} user:`, err)
+      setError(`Unable to ${action} this user. Please try again.`)
+    } finally {
+      setUpdatingUserId(null)
+    }
+  }
+
   return (
     <AdminLayout
       pageClass={`users-admin${
@@ -107,16 +127,23 @@ function UsersAdmin() {
       }`}
     >
       <main className="dashboard-main users-main">
-        <header className="tickets-header">
+        <header className="users-header">
           <h1>
-            <span aria-hidden="true">👥</span>
+            <span
+              className={
+                statusFilter === 'inactive' ? 'users-inactive-icon' : ''
+              }
+              aria-hidden="true"
+            >
+              {statusFilter === 'inactive' ? '⏸️' : '👥'}
+            </span>
             {statusFilter === 'inactive'
               ? 'Inactive Users'
               : 'Manage Users'}
           </h1>
 
           <div
-            className="tickets-toolbar"
+            className="users-toolbar"
             aria-label="User actions"
           >
             <Link
@@ -143,14 +170,12 @@ function UsersAdmin() {
               ⏸ Inactive
             </Link>
 
-            {statusFilter === 'active' && (
-              <Link
-                className="talent-show-button talent-show-button-add"
-                to="/admin/users/create"
-              >
-                ➕ Add New
-              </Link>
-            )}
+            <Link
+              className="talent-show-button talent-show-button-add"
+              to="/admin/users/create"
+            >
+              ➕ Add New
+            </Link>
           </div>
         </header>
 
@@ -158,43 +183,45 @@ function UsersAdmin() {
           className="talent-show-card users-card"
           aria-label="Users"
         >
-          <form
-            className="talent-show-search users-search"
-            onSubmit={submitSearch}
-            role="search"
-          >
-            <label
-              className="talent-show-sr-only"
-              htmlFor="users-search"
+          {statusFilter === 'active' && (
+            <form
+              className="talent-show-search users-search"
+              onSubmit={submitSearch}
+              role="search"
             >
-              Search by name
-            </label>
+              <label
+                className="talent-show-sr-only"
+                htmlFor="users-search"
+              >
+                Search by name
+              </label>
 
-            <input
-              id="users-search"
-              type="search"
-              placeholder="Search by Name..."
-              value={searchText}
-              onChange={(event) =>
-                setSearchText(event.target.value)
-              }
-            />
+              <input
+                id="users-search"
+                type="search"
+                placeholder="Search by Name..."
+                value={searchText}
+                onChange={(event) =>
+                  setSearchText(event.target.value)
+                }
+              />
 
-            <button
-              type="submit"
-              className="talent-show-button talent-show-button-search"
-            >
-              🔍 Search
-            </button>
+              <button
+                type="submit"
+                className="talent-show-button talent-show-button-search"
+              >
+                🔍 Search
+              </button>
 
-            <button
-              type="button"
-              className="talent-show-button talent-show-button-reset"
-              onClick={resetFilters}
-            >
-              ✕ Reset
-            </button>
-          </form>
+              <button
+                type="button"
+                className="talent-show-button talent-show-button-reset"
+                onClick={resetFilters}
+              >
+                ✕ Reset
+              </button>
+            </form>
+          )}
 
           <div className="talent-show-table-scroll users-table-scroll">
             <table className="talent-show-table users-table">
@@ -217,12 +244,9 @@ function UsersAdmin() {
                       Loading users...
                     </td>
                   </tr>
-                ) : error ? (
+                ) : error && users.length === 0 ? (
                   <tr>
-                    <td
-                      className="talent-show-empty"
-                      colSpan="4"
-                    >
+                    <td className="talent-show-empty" colSpan="4">
                       {error}
                     </td>
                   </tr>
@@ -251,6 +275,7 @@ function UsersAdmin() {
                           <Link
                             to={`/admin/users/${user.id}`}
                             className="talent-show-button talent-show-button-view"
+                            state={{ from: pathname }}
                           >
                             View
                           </Link>
@@ -258,9 +283,31 @@ function UsersAdmin() {
                           <Link
                             to={`/admin/users/${user.id}/edit`}
                             className="talent-show-button talent-show-button-edit"
+                            state={{ from: pathname }}
                           >
                             Edit
                           </Link>
+                          <button
+                            type="button"
+                            className={`talent-show-button ${
+                              statusFilter === 'active'
+                                ? 'talent-show-button-deactivate'
+                                : 'talent-show-button-activate'
+                            }`}
+                            onClick={() =>
+                              changeUserStatus(
+                                user,
+                                statusFilter === 'inactive',
+                              )
+                            }
+                            disabled={updatingUserId === user.id}
+                          >
+                            {updatingUserId === user.id
+                              ? 'Updating...'
+                              : statusFilter === 'active'
+                              ? 'Deactivate'
+                              : 'Activate'}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -269,6 +316,14 @@ function UsersAdmin() {
               </tbody>
             </table>
           </div>
+          {statusFilter === 'active' && (
+            <div className="users-bottom-bar" aria-hidden="true" />
+          )}
+          {error && users.length > 0 && (
+              <p className="users-feedback" role="alert">
+                {error}
+              </p>
+          )}
         </section>
       </main>
     </AdminLayout>

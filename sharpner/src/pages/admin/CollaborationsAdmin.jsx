@@ -3,11 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import AdminLayout from "../../components/layout/AdminLayout.jsx";
 import { downloadCsv } from "../../utils/downloadCsv.js";
 import { downloadPdf } from "../../utils/downloadPdf.js";
+import { collaborationsApi } from "../../services/collaborationsApi.js";
 import "../../styles/pages/TalentShow.css";
 import "../../styles/pages/CollaborationsAdmin.css";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 const CollaborationsAdmin = () => {
   const { pathname } = useLocation();
@@ -18,6 +16,7 @@ const CollaborationsAdmin = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [changingIds, setChangingIds] = useState([]);
 
   // ----------------------------------------------------
   // FETCH COLLABORATIONS
@@ -27,23 +26,7 @@ const CollaborationsAdmin = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch(`${API_BASE_URL}/collaborations`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Server returned ${response.status} ${response.statusText}`
-        );
-      }
-
-      const result = await response.json();
-
-      console.log("Collaborations API response:", result);
+      const result = await collaborationsApi.getAll();
 
       if (result.success && Array.isArray(result.data)) {
         setCollaborations(result.data);
@@ -73,6 +56,42 @@ const CollaborationsAdmin = () => {
   useEffect(() => {
     fetchCollaborations();
   }, []);
+
+  const handleStatusChange = async (item) => {
+    const nextStatus = Number(item.status) === 1 ? 0 : 1;
+    const action = nextStatus === 1 ? "activate" : "deactivate";
+    const confirmation =
+      nextStatus === 1
+        ? "Are you sure you want to activate this brand deal?"
+        : "Are you sure you want to deactivate this brand deal?";
+
+    if (!window.confirm(confirmation)) {
+      return;
+    }
+
+    setError("");
+    setChangingIds((previous) => [...previous, item.id]);
+
+    try {
+      await collaborationsApi.updateStatus(item.id, nextStatus);
+      setCollaborations((previous) =>
+        previous.map((collaboration) =>
+          collaboration.id === item.id
+            ? { ...collaboration, status: nextStatus }
+            : collaboration,
+        ),
+      );
+    } catch (requestError) {
+      console.error(`Failed to ${action} Brand Deal:`, requestError);
+      setError(
+        requestError.message || `Unable to ${action} this Brand Deal.`,
+      );
+    } finally {
+      setChangingIds((previous) =>
+        previous.filter((id) => id !== item.id),
+      );
+    }
+  };
 
   // ----------------------------------------------------
   // SEARCH + STATUS FILTER
@@ -225,23 +244,27 @@ const CollaborationsAdmin = () => {
               </Link>
             )}
 
-            <button
-              type="button"
-              className="talent-show-button talent-show-button-excel"
-              onClick={exportCollaborations}
-              disabled={loading || filteredCollaborations.length === 0}
-            >
-              📊 Export Excel
-            </button>
+            {!isInactivePage && (
+              <>
+                <button
+                  type="button"
+                  className="talent-show-button talent-show-button-excel"
+                  onClick={exportCollaborations}
+                  disabled={loading || filteredCollaborations.length === 0}
+                >
+                  📊 Export Excel
+                </button>
 
-            <button
-              type="button"
-              className="talent-show-button talent-show-button-pdf"
-              onClick={exportCollaborationsPdf}
-              disabled={loading || filteredCollaborations.length === 0}
-            >
-              📄 Export PDF
-            </button>
+                <button
+                  type="button"
+                  className="talent-show-button talent-show-button-pdf"
+                  onClick={exportCollaborationsPdf}
+                  disabled={loading || filteredCollaborations.length === 0}
+                >
+                  📄 Export PDF
+                </button>
+              </>
+            )}
           </div>
         </header>
 
@@ -337,21 +360,35 @@ const CollaborationsAdmin = () => {
                         </td>
                         <td>
                           <div className="talent-show-row-actions">
-                            <button
-                              type="button"
+                            <Link
                               className="talent-show-button talent-show-button-view"
-                              disabled
-                              title="Brand Deal details are not available yet."
+                              to={`/admin/collaborations/${encodeURIComponent(item.id)}`}
                             >
                               View
-                            </button>
+                            </Link>
+                            {!isInactivePage && (
+                              <Link
+                                className="talent-show-button talent-show-button-edit"
+                                to={`/admin/collaborations/${encodeURIComponent(item.id)}/edit`}
+                              >
+                                Edit
+                              </Link>
+                            )}
                             <button
                               type="button"
-                              className="talent-show-button talent-show-button-edit"
-                              disabled
-                              title="Brand Deal editing is not available yet."
+                              className={`talent-show-button ${
+                                isInactivePage
+                                  ? "talent-show-button-activate"
+                                  : "talent-show-button-deactivate"
+                              }`}
+                              onClick={() => handleStatusChange(item)}
+                              disabled={changingIds.includes(item.id)}
                             >
-                              Edit
+                              {changingIds.includes(item.id)
+                                ? "Saving..."
+                                : isInactivePage
+                                  ? "Activate"
+                                  : "Deactivate"}
                             </button>
                           </div>
                         </td>

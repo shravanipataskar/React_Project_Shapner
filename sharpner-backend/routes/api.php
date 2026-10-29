@@ -29,11 +29,15 @@ Route::patch('/talent-shows/{id}', [TalentShowController::class, 'update']);
 Route::prefix('creative-ideas')->group(function () {
     Route::get('/', [IdeaSubmissionController::class, 'index']);
     Route::get('/{id}', [IdeaSubmissionController::class, 'show']);
+    Route::put('/{id}', [IdeaSubmissionController::class, 'update']);
+    Route::patch('/{id}', [IdeaSubmissionController::class, 'update']);
     Route::patch('/{id}/status', [IdeaSubmissionController::class, 'updateStatus']);
 });
 
 Route::get('/collaborations', [CollaborationRequestController::class, 'index']);
 Route::get('/collaborations/{id}', [CollaborationRequestController::class, 'show']);
+Route::put('/collaborations/{id}', [CollaborationRequestController::class, 'update']);
+Route::patch('/collaborations/{id}', [CollaborationRequestController::class, 'update']);
 Route::patch('/collaborations/{id}/status', [CollaborationRequestController::class, 'updateStatus']);
 Route::patch('/collaborations/{id}/review-status', [CollaborationRequestController::class, 'updateReviewStatus']);
 Route::get('/tickets', [TicketController::class, 'index']);
