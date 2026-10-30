@@ -5,7 +5,7 @@ import { videosApi } from "../../services/api";
 import { useAuth } from "../../app/authContext.js";
 import { getVideoMetadata } from "../../services/videoMetadata.js";
 import {
-  adminNavigationItems,
+  getNavigationItemsForRole,
   isAdminNavigationItemActive,
 } from "../../components/layout/adminNavigation.js";
 import "../../styles/pages/VideosPage.css";
@@ -13,7 +13,8 @@ import "../../styles/pages/VideosPage.css";
 export default function VideosPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const navigationItems = getNavigationItemsForRole(user?.role);
 
   const [searchInput, setSearchInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -199,7 +200,7 @@ export default function VideosPage() {
         </div>
 
         <nav className="videos-navigation">
-          {adminNavigationItems.map((item) => {
+          {navigationItems.map((item) => {
             return (
               <NavLink
                 key={item.label}

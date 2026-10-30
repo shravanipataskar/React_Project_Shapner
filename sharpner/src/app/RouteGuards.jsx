@@ -1,5 +1,9 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./authContext.js";
+import {
+  hasAdminAccess,
+  hasSuperAdminAccess,
+} from "../utils/userTypes.js";
 
 export function ProtectedRoute() {
   const { status, retryAuth } = useAuth();
@@ -22,6 +26,26 @@ export function ProtectedRoute() {
 
   if (status !== "authenticated") {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  return <Outlet />;
+}
+
+export function AdminFeatureRoute() {
+  const { user } = useAuth();
+
+  if (!hasAdminAccess(user?.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+}
+
+export function SuperAdminFeatureRoute() {
+  const { user } = useAuth();
+
+  if (!hasSuperAdminAccess(user?.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

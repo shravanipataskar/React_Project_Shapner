@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 
 class AdminUser
 {
-    public static function allows(User $user): bool
+    public static function isActive(User $user): bool
     {
         if (Schema::hasColumn('users', 'status')) {
             $status = strtolower((string) $user->getAttribute('status'));
@@ -18,6 +18,28 @@ class AdminUser
             }
         }
 
+        if (
+            $user->getAttribute('user_role_id') &&
+            Schema::hasTable('user_roles') &&
+            Schema::hasColumn('user_roles', 'status')
+        ) {
+            $roleStatus = DB::table('user_roles')
+                ->where('id', $user->getAttribute('user_role_id'))
+                ->value('status');
+
+            if (
+                $roleStatus !== null &&
+                !in_array(strtolower((string) $roleStatus), ['1', 'active', 'enabled'], true)
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static function roleFor(User $user): string
+    {
         $roleNames = [
             $user->getAttribute('user_type'),
             $user->getAttribute('role'),
@@ -30,31 +52,52 @@ class AdminUser
         ) {
             $role = DB::table('user_roles')
                 ->where('id', $user->getAttribute('user_role_id'))
-                ->first();
-
-            if (
-                $role &&
-                Schema::hasColumn('user_roles', 'status') &&
-                !in_array(strtolower((string) $role->status), ['1', 'active', 'enabled'], true)
-            ) {
-                return false;
-            }
-
-            $roleNames[] = $role->name ?? null;
+                ->value('name');
+            array_unshift($roleNames, $role);
         }
 
         foreach ($roleNames as $roleName) {
             $roleValue = strtolower(trim((string) $roleName));
             $normalized = preg_replace('/[^a-z]/', '', $roleValue);
 
-            if (
-                $roleValue === '00' ||
-                in_array($normalized, ['admin', 'administrator', 'superadmin', 'superadministrator'], true)
-            ) {
-                return true;
+            if ($roleValue === '00' || in_array($normalized, ['superadmin', 'superadministrator'], true)) {
+                return 'super_admin';
             }
         }
 
-        return false;
+        foreach ($roleNames as $roleName) {
+            $roleValue = strtolower(trim((string) $roleName));
+            $normalized = preg_replace('/[^a-z]/', '', $roleValue);
+            if (
+                $roleValue === '11' ||
+                in_array($normalized, ['admin', 'administrator'], true)
+            ) {
+                return 'admin';
+            }
+        }
+
+        foreach ($roleNames as $roleName) {
+            $roleValue = strtolower(trim((string) $roleName));
+            $normalized = preg_replace('/[^a-z]/', '', $roleValue);
+            if ($normalized !== '') {
+                return $normalized;
+            }
+        }
+
+        return 'user';
+    }
+
+    public static function allows(User $user): bool
+    {
+        return self::isActive($user) && in_array(
+            self::roleFor($user),
+            ['admin', 'super_admin'],
+            true,
+        );
+    }
+
+    public static function allowsSuperAdmin(User $user): bool
+    {
+        return self::isActive($user) && self::roleFor($user) === 'super_admin';
     }
 }

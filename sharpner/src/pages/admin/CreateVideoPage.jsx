@@ -5,7 +5,7 @@ import { videosApi } from "../../services/api";
 import { useAuth } from "../../app/authContext.js";
 import { getVideoMetadata } from "../../services/videoMetadata.js";
 import {
-  adminNavigationItems,
+  getNavigationItemsForRole,
   isAdminNavigationItemActive,
 } from "../../components/layout/adminNavigation.js";
 import "../../styles/pages/CreateVideoPage.css";
@@ -13,7 +13,8 @@ import "../../styles/pages/CreateVideoPage.css";
 export default function CreateVideoPage() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const navigationItems = getNavigationItemsForRole(user?.role);
 
   const [formData, setFormData] = useState({
     videoUrl: "",
@@ -119,7 +120,7 @@ export default function CreateVideoPage() {
         </div>
 
         <nav className="create-video-navigation">
-          {adminNavigationItems.map((item) => (
+          {navigationItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.path}

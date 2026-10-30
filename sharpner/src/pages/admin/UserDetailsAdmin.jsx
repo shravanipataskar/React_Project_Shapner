@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { usersApi } from '../../services/api.js'
+import { getUserTypeLabel } from '../../utils/userTypes.js'
 import '../../styles/pages/UserDetailsAdmin.css'
 
 const userDetailsFields = [
@@ -27,7 +28,7 @@ function formatCreatedAt(value) {
 }
 
 function formatUserType(value) {
-  return value === '00' ? 'Super Admin' : value || 'N/A'
+  return value ? getUserTypeLabel(value) : 'N/A'
 }
 
 function UserDetailsAdmin() {

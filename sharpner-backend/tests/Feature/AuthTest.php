@@ -29,6 +29,8 @@ class AuthTest extends TestCase
             $table->string('name');
             $table->string('username')->nullable()->unique();
             $table->string('email')->unique();
+            $table->string('phone_number')->nullable();
+            $table->string('whatsapp_number')->nullable();
             $table->string('password');
             $table->string('user_type')->nullable();
             $table->boolean('status')->default(true);
@@ -62,12 +64,18 @@ class AuthTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('success', true)
+            ->assertJsonPath('user.role', 'super_admin')
             ->assertJsonMissingPath('user.password');
 
         $this->withHeaders($origin)
             ->getJson('/api/auth/me')
             ->assertOk()
             ->assertJsonPath('user.username', 'admin-user');
+
+        $this->withHeaders($origin)
+            ->getJson('/api/users')
+            ->assertOk()
+            ->assertJsonPath('data.0.username', 'admin-user');
 
         $this->withHeaders($origin)
             ->postJson('/api/auth/logout')
@@ -79,37 +87,80 @@ class AuthTest extends TestCase
             ->assertUnauthorized();
     }
 
-    public function test_invalid_inactive_and_non_admin_accounts_are_rejected_generically(): void
+    public function test_inactive_accounts_are_rejected_generically(): void
     {
         DB::table('users')->insert([
-            [
-                'name' => 'Inactive Admin',
-                'username' => 'inactive-admin',
-                'email' => 'inactive@example.test',
-                'password' => Hash::make('secure-password'),
-                'user_type' => 'admin',
-                'status' => 0,
-            ],
-            [
-                'name' => 'Regular User',
-                'username' => 'regular-user',
-                'email' => 'regular@example.test',
-                'password' => Hash::make('secure-password'),
-                'user_type' => 'member',
-                'status' => 1,
-            ],
+            'name' => 'Inactive Admin',
+            'username' => 'inactive-admin',
+            'email' => 'inactive@example.test',
+            'password' => Hash::make('secure-password'),
+            'user_type' => 'admin',
+            'status' => 0,
         ]);
 
         foreach ([
             ['username' => 'missing-user', 'password' => 'secure-password'],
             ['username' => 'inactive-admin', 'password' => 'secure-password'],
-            ['username' => 'regular-user', 'password' => 'secure-password'],
-            ['username' => 'regular-user', 'password' => 'wrong-password'],
         ] as $credentials) {
             $this->postJson('/api/auth/login', $credentials)
                 ->assertUnauthorized()
                 ->assertJsonPath('message', 'Invalid username or password.');
         }
+    }
+
+    public function test_non_admin_can_sign_in_but_cannot_access_admin_data(): void
+    {
+        DB::table('users')->insert([
+            'name' => 'Regular User',
+            'username' => 'regular-user',
+            'email' => 'regular@example.test',
+            'password' => Hash::make('secure-password'),
+            'user_type' => 'member',
+            'status' => 1,
+        ]);
+
+        $origin = ['Origin' => 'http://localhost:5173'];
+
+        $this->withHeaders($origin)
+            ->postJson('/api/auth/login', [
+                'username' => 'regular-user',
+                'password' => 'secure-password',
+            ])
+            ->assertOk()
+            ->assertJsonPath('user.role', 'member');
+
+        $this->withHeaders($origin)
+            ->getJson('/api/auth/me')
+            ->assertOk()
+            ->assertJsonPath('user.role', 'member');
+
+        $this->withHeaders($origin)
+            ->getJson('/api/users')
+            ->assertForbidden();
+    }
+
+    public function test_admin_is_limited_to_admin_features_and_cannot_manage_users(): void
+    {
+        DB::table('users')->insert([
+            'name' => 'Admin User',
+            'username' => 'role-eleven-admin',
+            'email' => 'role-eleven@example.test',
+            'password' => Hash::make('secure-password'),
+            'user_type' => '11',
+            'status' => 1,
+        ]);
+
+        $this->withHeaders(['Origin' => 'http://localhost:5173'])
+            ->postJson('/api/auth/login', [
+                'username' => 'role-eleven-admin',
+                'password' => 'secure-password',
+            ])
+            ->assertOk()
+            ->assertJsonPath('user.role', 'admin');
+
+        $this->withHeaders(['Origin' => 'http://localhost:5173'])
+            ->getJson('/api/users')
+            ->assertForbidden();
     }
 
     public function test_admin_data_endpoints_reject_unauthenticated_requests(): void

@@ -34,7 +34,7 @@ class AuthController extends Controller
         if (
             !$user ||
             !Hash::check($credentials['password'], $user->getAuthPassword()) ||
-            !AdminUser::allows($user)
+            !AdminUser::isActive($user)
         ) {
             return response()->json([
                 'message' => 'Invalid username or password.',
@@ -52,6 +52,12 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
+        if (!AdminUser::isActive($request->user())) {
+            return response()->json([
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
         return response()->json([
             'success' => true,
             'user' => $this->userPayload($request->user()),
@@ -79,7 +85,7 @@ class AuthController extends Controller
             'name' => $user->getAttribute('name'),
             'username' => $username,
             'email' => $user->getAttribute('email'),
-            'role' => $user->getAttribute('user_type'),
+            'role' => AdminUser::roleFor($user),
         ];
     }
 }

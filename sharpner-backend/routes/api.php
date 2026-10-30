@@ -12,10 +12,10 @@ use App\Http\Controllers\Api\VideoController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/auth/me', [AuthController::class, 'me'])
-    ->middleware(['auth:sanctum', 'admin']);
+    ->middleware('auth:sanctum');
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 Route::post('/auth/logout', [AuthController::class, 'logout'])
-    ->middleware(['auth:sanctum', 'admin']);
+    ->middleware('auth:sanctum');
 
 Route::get('/videos', [VideoController::class, 'index']);
 
@@ -66,6 +66,9 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/tickets/{id}', [TicketController::class, 'update']);
     Route::patch('/tickets/{id}/status', [TicketController::class, 'updateStatus']);
 
+});
+
+Route::middleware(['auth:sanctum', 'super-admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/options', [UserController::class, 'createOptions']);
     Route::post('/users', [UserController::class, 'store']);

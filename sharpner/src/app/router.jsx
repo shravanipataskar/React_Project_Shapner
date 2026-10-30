@@ -3,7 +3,12 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import PublicLayout from '../components/layout/PublicLayout.jsx';
 import { AuthProvider } from './AuthContext.jsx';
-import { GuestRoute, ProtectedRoute } from './RouteGuards.jsx';
+import {
+  AdminFeatureRoute,
+  GuestRoute,
+  ProtectedRoute,
+  SuperAdminFeatureRoute,
+} from './RouteGuards.jsx';
 
 import AboutPage from '../pages/public/AboutPage.jsx';
 import CollaboratePage from '../pages/public/CollaboratePage.jsx';
@@ -65,47 +70,51 @@ function AppRouter() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin/dashboard" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/admin/talent-show" element={<TalentShow />} />
-            <Route path="/admin/talent-shows" element={<TalentShow />} />
-            <Route path="/admin/talent-show/inactive" element={<TalentShow />} />
-            <Route path="/admin/talent-shows/inactive" element={<TalentShow />} />
-            <Route path="/admin/talent-show/create" element={<TalentShowCreate />} />
-            <Route path="/admin/talent-shows/create" element={<TalentShowCreate />} />
-            <Route path="/admin/talent-show/:id/edit" element={<TalentShowEdit />} />
-            <Route path="/admin/talent-show/:id" element={<TalentShowView />} />
-            <Route path="/admin/ideas" element={<CreativeIdeasAdmin />} />
-            <Route path="/admin/ideas/inactive" element={<CreativeIdeasAdmin />} />
-            <Route path="/admin/ideas/create" element={<CreativeIdeaCreateAdmin />} />
-            <Route path="/admin/ideas/:id/edit" element={<CreativeIdeaEditAdmin />} />
-            <Route path="/admin/creative-ideas" element={<Navigate to="/admin/ideas" replace />} />
-            <Route path="/admin/collaborations" element={<CollaborationsAdmin />} />
-            <Route path="/admin/collaborations/inactive" element={<CollaborationsAdmin />} />
-            <Route path="/admin/collaborations/create" element={<CollaborationCreateAdmin />} />
-            <Route path="/admin/collaborations/:id/edit" element={<CollaborationEditAdmin />} />
-            <Route path="/admin/collaborations/:id" element={<CollaborationDetailsAdmin />} />
-            <Route path="/admin/brand-deals" element={<CollaborationsAdmin />} />
-            <Route path="/admin/tickets" element={<TicketsAdmin />} />
-            <Route path="/admin/tickets/inactive" element={<TicketsAdmin />} />
-            <Route path="/admin/tickets/create" element={<TicketCreateAdmin />} />
-            <Route path="/admin/tickets/:id" element={<TicketDetailsAdmin />} />
-            <Route path="/admin/tickets/:id/edit" element={<TicketCreateAdmin />} />
-            <Route path="/admin/users" element={<UsersAdmin />} />
-            <Route path="/admin/users/inactive" element={<UsersAdmin />} />
-            <Route path="/admin/users/create" element={<UserCreatePage />} />
-            <Route path="/admin/users/:id/edit" element={<UserEditPage />} />
-            <Route path="/admin/users/:id" element={<UserDetailsAdmin />} />
-            <Route path="/admin/videos" element={<VideoPage />} />
-            <Route path="/admin/videos/inactive" element={<VideoPage />} />
-            <Route path="/admin/auditions" element={<AuditionsPage />} />
-            <Route path="/admin/auditions/inactive" element={<AuditionsPage />} />
-            <Route path="/admin/auditions/:id/edit" element={<EditAuditionPage />} />
-            <Route path="/admin/auditions/:id" element={<AuditionDetailsPage />} />
-            <Route path="/admin/dhol-pathak" element={<DholPathakPage />} />
-            <Route path="/admin/dhol-pathak/inactive" element={<DholPathakPage />} />
-            <Route path="/admin/dhol-pathak/:id/edit" element={<EditDholPathakPage />} />
-            <Route path="/admin/dhol-pathak/:id" element={<DholPathakDetailsPage />} />
-            <Route path="/videos/create" element={<CreateVideoPage />} />
-            <Route path="/admin/auditions/create" element={<CreateAuditionPage />} />
+            <Route element={<AdminFeatureRoute />}>
+              <Route path="/admin/talent-show" element={<TalentShow />} />
+              <Route path="/admin/talent-shows" element={<TalentShow />} />
+              <Route path="/admin/talent-show/inactive" element={<TalentShow />} />
+              <Route path="/admin/talent-shows/inactive" element={<TalentShow />} />
+              <Route path="/admin/talent-show/create" element={<TalentShowCreate />} />
+              <Route path="/admin/talent-shows/create" element={<TalentShowCreate />} />
+              <Route path="/admin/talent-show/:id/edit" element={<TalentShowEdit />} />
+              <Route path="/admin/talent-show/:id" element={<TalentShowView />} />
+              <Route path="/admin/ideas" element={<CreativeIdeasAdmin />} />
+              <Route path="/admin/ideas/inactive" element={<CreativeIdeasAdmin />} />
+              <Route path="/admin/ideas/create" element={<CreativeIdeaCreateAdmin />} />
+              <Route path="/admin/ideas/:id/edit" element={<CreativeIdeaEditAdmin />} />
+              <Route path="/admin/creative-ideas" element={<Navigate to="/admin/ideas" replace />} />
+              <Route path="/admin/collaborations" element={<CollaborationsAdmin />} />
+              <Route path="/admin/collaborations/inactive" element={<CollaborationsAdmin />} />
+              <Route path="/admin/collaborations/create" element={<CollaborationCreateAdmin />} />
+              <Route path="/admin/collaborations/:id/edit" element={<CollaborationEditAdmin />} />
+              <Route path="/admin/collaborations/:id" element={<CollaborationDetailsAdmin />} />
+              <Route path="/admin/brand-deals" element={<CollaborationsAdmin />} />
+              <Route path="/admin/tickets" element={<TicketsAdmin />} />
+              <Route path="/admin/tickets/inactive" element={<TicketsAdmin />} />
+              <Route path="/admin/tickets/create" element={<TicketCreateAdmin />} />
+              <Route path="/admin/tickets/:id" element={<TicketDetailsAdmin />} />
+              <Route path="/admin/tickets/:id/edit" element={<TicketCreateAdmin />} />
+              <Route element={<SuperAdminFeatureRoute />}>
+                <Route path="/admin/users" element={<UsersAdmin />} />
+                <Route path="/admin/users/inactive" element={<UsersAdmin />} />
+                <Route path="/admin/users/create" element={<UserCreatePage />} />
+                <Route path="/admin/users/:id/edit" element={<UserEditPage />} />
+                <Route path="/admin/users/:id" element={<UserDetailsAdmin />} />
+              </Route>
+              <Route path="/admin/videos" element={<VideoPage />} />
+              <Route path="/admin/videos/inactive" element={<VideoPage />} />
+              <Route path="/admin/auditions" element={<AuditionsPage />} />
+              <Route path="/admin/auditions/inactive" element={<AuditionsPage />} />
+              <Route path="/admin/auditions/:id/edit" element={<EditAuditionPage />} />
+              <Route path="/admin/auditions/:id" element={<AuditionDetailsPage />} />
+              <Route path="/admin/dhol-pathak" element={<DholPathakPage />} />
+              <Route path="/admin/dhol-pathak/inactive" element={<DholPathakPage />} />
+              <Route path="/admin/dhol-pathak/:id/edit" element={<EditDholPathakPage />} />
+              <Route path="/admin/dhol-pathak/:id" element={<DholPathakDetailsPage />} />
+              <Route path="/videos/create" element={<CreateVideoPage />} />
+              <Route path="/admin/auditions/create" element={<CreateAuditionPage />} />
+            </Route>
           </Route>
 
           <Route element={<PublicLayout />}>

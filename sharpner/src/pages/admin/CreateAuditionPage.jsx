@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  adminNavigationItems,
+  getNavigationItemsForRole,
   isAdminNavigationItemActive,
 } from "../../components/layout/adminNavigation.js";
 import { auditionsApi } from "../../services/auditionsApi.js";
@@ -118,7 +118,8 @@ const getLocalDate = () => {
 
 export default function CreateAuditionPage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const navigationItems = getNavigationItemsForRole(user?.role);
   const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -339,7 +340,7 @@ export default function CreateAuditionPage() {
         </div>
 
         <nav className="audition-navigation">
-          {adminNavigationItems.map((item) => (
+          {navigationItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.path}

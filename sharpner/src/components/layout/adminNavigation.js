@@ -1,3 +1,8 @@
+import {
+  hasAdminAccess,
+  hasSuperAdminAccess,
+} from '../../utils/userTypes.js'
+
 export const adminNavigationItems = [
   { icon: '▦', label: 'Dashboard', path: '/dashboard' },
   { icon: '▱', label: 'Videos & Shorts', path: '/admin/videos' },
@@ -9,6 +14,18 @@ export const adminNavigationItems = [
   { icon: '▤', label: 'Tickets', path: '/admin/tickets' },
   { icon: '♧', label: 'Users', path: '/admin/users' },
 ]
+
+export function getNavigationItemsForRole(role) {
+  if (hasSuperAdminAccess(role)) {
+    return adminNavigationItems
+  }
+
+  if (hasAdminAccess(role)) {
+    return adminNavigationItems.filter((item) => item.label !== 'Users')
+  }
+
+  return adminNavigationItems.filter((item) => item.path === '/dashboard')
+}
 
 export function isAdminNavigationItemActive(item, pathname) {
   if (item.label === 'Talent Show') {

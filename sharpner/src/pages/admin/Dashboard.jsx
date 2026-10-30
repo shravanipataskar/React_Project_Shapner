@@ -1,5 +1,10 @@
 import AdminLayout from "../../components/layout/AdminLayout.jsx";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../app/authContext.js";
+import {
+  hasAdminAccess,
+  hasSuperAdminAccess,
+} from "../../utils/userTypes.js";
 
 const statisticSections = [
 {
@@ -34,65 +39,77 @@ cards: [
 ];
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const canAccessAdminFeatures = hasAdminAccess(user?.role);
+  const isSuperAdmin = hasSuperAdminAccess(user?.role);
+
   return (
     <AdminLayout pageClass="dashboard-page">
       <main className="dashboard-main">
         <header className="dashboard-header">
           <h1>
             <span>📊</span>
-            Admin Dashboard
+            {canAccessAdminFeatures ? "Admin Dashboard" : "Dashboard"}
           </h1>
         </header>
 
-        {statisticSections.map((section) => (
-          <section className="dashboard-section" key={section.title}>
+        {statisticSections
+          .filter((section) => isSuperAdmin || !section.title.includes("Users"))
+          .map((section) => (
+            <section className="dashboard-section" key={section.title}>
+              <div className="dashboard-section-heading">
+                <h2>{section.title}</h2>
+              </div>
+
+              <div
+                className={`dashboard-stat-grid ${
+                  section.columns === 3 ? 'dashboard-grid-3' : 'dashboard-grid-4'
+                }`}
+              >
+                {section.cards.map((card) => (
+                  <article className="dashboard-stat-card" key={card.label}>
+                    <h3>{card.label}</h3>
+                    <p>{card.value}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))}
+
+        {canAccessAdminFeatures && (
+          <section className="dashboard-section dashboard-quick-section">
             <div className="dashboard-section-heading">
-              <h2>{section.title}</h2>
+              <h2>⚡ Quick Actions</h2>
             </div>
 
-            <div
-              className={`dashboard-stat-grid ${
-                section.columns === 3 ? 'dashboard-grid-3' : 'dashboard-grid-4'
-              }`}
-            >
-              {section.cards.map((card) => (
-                <article className="dashboard-stat-card" key={card.label}>
-                  <h3>{card.label}</h3>
-                  <p>{card.value}</p>
-                </article>
-              ))}
+            <div className="dashboard-quick-actions">
+              <Link
+                to="/admin/videos"
+                className="dashboard-action dashboard-action-blue"
+              >
+                🎬 Manage Videos
+              </Link>
+
+              {isSuperAdmin && (
+                <>
+                  <Link
+                    to="/videos/create"
+                    className="dashboard-action dashboard-action-gray"
+                  >
+                    ➕ Add New Video
+                  </Link>
+
+                  <Link
+                    to="/admin/videos/inactive"
+                    className="dashboard-action dashboard-action-yellow"
+                  >
+                    ▣ Inactive Content
+                  </Link>
+                </>
+              )}
             </div>
           </section>
-        ))}
-
-        <section className="dashboard-section dashboard-quick-section">
-          <div className="dashboard-section-heading">
-            <h2>⚡ Quick Actions</h2>
-          </div>
-
-          <div className="dashboard-quick-actions">
-            <Link
-              to="/admin/videos"
-              className="dashboard-action dashboard-action-blue"
-            >
-              🎬 Manage Videos
-            </Link>
-
-            <Link
-              to="/admin/videos"
-              className="dashboard-action dashboard-action-gray"
-            >
-              ➕ Add New Video
-            </Link>
-
-            <Link
-              to="/admin/videos"
-              className="dashboard-action dashboard-action-yellow"
-            >
-              ▣ Inactive Content
-            </Link>
-          </div>
-        </section>
+        )}
       </main>
     </AdminLayout>
   )

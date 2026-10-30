@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../app/authContext.js'
-import {
-  adminNavigationItems,
-  isAdminNavigationItemActive,
-} from './adminNavigation.js'
+import { getNavigationItemsForRole } from './adminNavigation.js'
+import { isAdminNavigationItemActive } from './adminNavigation.js'
 import '../../styles/pages/Dashboard.css'
 
 function renderNavIcon(label, fallback) {
@@ -92,7 +90,8 @@ function renderNavIcon(label, fallback) {
 function AdminLayout({ children, pageClass = '' }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { pathname } = useLocation()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const navigationItems = getNavigationItemsForRole(user?.role)
 
   async function handleSignOut() {
     const confirmed = window.confirm('Are you sure you want to sign out?')
@@ -136,7 +135,7 @@ function AdminLayout({ children, pageClass = '' }) {
         </div>
 
         <nav className="dashboard-navigation" aria-label="Admin navigation">
-          {adminNavigationItems.map((item) => (
+          {navigationItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.path}

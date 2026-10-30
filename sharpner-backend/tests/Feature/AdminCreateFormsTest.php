@@ -33,8 +33,8 @@ class AdminCreateFormsTest extends TestCase
         $this->createTicketTables();
         $this->createDholPathakTable();
 
-        $adminRoleId = DB::table('user_roles')->insertGetId([
-            'name' => 'Admin',
+        $superAdminRoleId = DB::table('user_roles')->insertGetId([
+            'name' => 'Super Admin',
             'user_type' => null,
             'status' => 1,
             'created_at' => now(),
@@ -42,7 +42,7 @@ class AdminCreateFormsTest extends TestCase
         ]);
         $adminId = DB::table('users')->insertGetId([
             'id' => 9999,
-            'user_role_id' => $adminRoleId,
+            'user_role_id' => $superAdminRoleId,
             'name' => 'Admin User',
             'username' => 'admin-user',
             'email' => 'admin@example.test',
@@ -84,7 +84,7 @@ class AdminCreateFormsTest extends TestCase
         $this->assertTrue(Hash::check('secure-pass-123', $user->password));
     }
 
-    public function test_admin_can_update_user_details_and_optionally_change_password(): void
+    public function test_super_admin_can_update_user_details_and_optionally_change_password(): void
     {
         DB::table('user_roles')->insert([
             'name' => 'Member',

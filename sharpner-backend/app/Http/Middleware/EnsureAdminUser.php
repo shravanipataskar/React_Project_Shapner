@@ -13,10 +13,16 @@ class EnsureAdminUser
     {
         $user = $request->user();
 
-        if (!$user || !AdminUser::allows($user)) {
+        if (!$user) {
             return response()->json([
                 'message' => 'Unauthenticated.',
             ], 401);
+        }
+
+        if (!AdminUser::allows($user)) {
+            return response()->json([
+                'message' => 'Forbidden.',
+            ], 403);
         }
 
         return $next($request);

@@ -1,13 +1,14 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../app/authContext.js";
 import {
-  adminNavigationItems,
+  getNavigationItemsForRole,
   isAdminNavigationItemActive,
 } from "../layout/adminNavigation.js";
 
 export default function AuditionsSidebar({ isOpen, onClose, onToggle }) {
   const { pathname } = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const navigationItems = getNavigationItemsForRole(user?.role);
 
   const handleSignOut = async () => {
     if (window.confirm("Are you sure you want to sign out?")) {
@@ -52,7 +53,7 @@ export default function AuditionsSidebar({ isOpen, onClose, onToggle }) {
         </div>
 
         <nav className="auditions-navigation">
-          {adminNavigationItems.map((item) => (
+          {navigationItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.path}

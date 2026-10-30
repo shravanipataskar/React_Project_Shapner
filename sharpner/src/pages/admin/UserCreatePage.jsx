@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { usersApi } from '../../services/api.js'
+import { getUserTypeLabel } from '../../utils/userTypes.js'
 import '../../styles/pages/UserCreatePage.css'
 
 const userFields = [
@@ -176,7 +177,7 @@ function UserCreatePage() {
               </option>
               {userTypes.map((type) => (
                 <option key={type} value={type}>
-                  {type === '00' ? 'Super Admin' : type}
+                  {getUserTypeLabel(type)}
                 </option>
               ))}
             </select>

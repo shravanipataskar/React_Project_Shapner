@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { usersApi } from '../../services/api.js'
+import { getUserTypeLabel, getUserTypeValue } from '../../utils/userTypes.js'
 import '../../styles/pages/UserCreatePage.css'
 
 const initialForm = {
@@ -17,13 +18,7 @@ const initialForm = {
 }
 
 function displayUserType(value) {
-  return String(value ?? '') === '00' ? 'Super Admin' : String(value ?? '')
-}
-
-function userTypeValue(value) {
-  return String(value).trim().toLowerCase() === 'super admin'
-    ? '00'
-    : String(value).trim()
+  return getUserTypeLabel(value)
 }
 
 function UserEditPage() {
@@ -108,7 +103,7 @@ function UserEditPage() {
     const user = {
       ...formData,
       username: formData.username.trim() || null,
-      user_type: userTypeValue(formData.user_type),
+      user_type: getUserTypeValue(formData.user_type),
       status: Number(formData.status),
     }
 

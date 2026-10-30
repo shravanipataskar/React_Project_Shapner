@@ -204,11 +204,12 @@ function TicketsAdmin() {
   // ---------------------------------------------------------
   async function handleToggleStatus(ticket, nextActive) {
     const action = nextActive ? 'activate' : 'deactivate'
-    const confirmMessage = nextActive
-      ? `Are you sure you want to activate ticket ${ticket.ticketNo || ''}?`
-      : `Are you sure you want to deactivate ticket ${ticket.ticketNo || ''}?`
-
-    if (!window.confirm(confirmMessage)) {
+    if (
+      !nextActive &&
+      !window.confirm(
+        `Are you sure you want to deactivate ticket ${ticket.ticketNo || ''}?`,
+      )
+    ) {
       return
     }
 
@@ -224,15 +225,9 @@ function TicketsAdmin() {
             : item,
         ),
       )
-
-      window.alert(
-        nextActive
-          ? 'Ticket activated successfully.'
-          : 'Ticket deactivated successfully.',
-      )
     } catch (err) {
       console.error(`Failed to ${action} ticket:`, err)
-      window.alert(`Failed to ${action} ticket: ${err.message || 'Please try again.'}`)
+      setError(`Unable to ${action} ticket. Please try again.`)
     }
   }
 
@@ -424,6 +419,7 @@ function TicketsAdmin() {
           ------------------------------------------------- */}
           {error && (
             <div
+              role="alert"
               style={{
                 padding: '15px',
                 marginBottom: '15px',
