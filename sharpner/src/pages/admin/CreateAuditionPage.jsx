@@ -5,6 +5,8 @@ import {
   adminNavigationItems,
   isAdminNavigationItemActive,
 } from "../../components/layout/adminNavigation.js";
+import { auditionsApi } from "../../services/auditionsApi.js";
+import { useAuth } from "../../app/authContext.js";
 import "../../styles/pages/CreateAuditionPage.css";
 
 const Section = ({ title, children }) => (
@@ -67,7 +69,7 @@ const Field = ({
   </div>
 );
 
-const RadioGroup = ({ label, name, options, value, onChange }) => (
+const RadioGroup = ({ label, name, options, value, onChange, required = false }) => (
   <fieldset className="audition-choice-field">
     <legend>{label}</legend>
     <div className="audition-choice-options">
@@ -79,6 +81,7 @@ const RadioGroup = ({ label, name, options, value, onChange }) => (
             value={option.value}
             checked={value === option.value}
             onChange={onChange}
+            required={required}
           />
           {option.label}
         </label>
@@ -115,8 +118,11 @@ const getLocalDate = () => {
 
 export default function CreateAuditionPage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const [formData, setFormData] = useState({
     auditionType: "",
@@ -166,6 +172,7 @@ export default function CreateAuditionPage() {
 
   const updateField = (event) => {
     const { name, value } = event.target;
+    setSubmitError("");
 
     setFormData((previous) => ({
       ...previous,
@@ -175,6 +182,7 @@ export default function CreateAuditionPage() {
 
   const updateCheckbox = (event) => {
     const { name, value, checked } = event.target;
+    setSubmitError("");
 
     setFormData((previous) => ({
       ...previous,
@@ -184,18 +192,103 @@ export default function CreateAuditionPage() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // UI only: no database submission is implemented.
-    window.alert(
-      "Audition form UI is ready. Database integration is not connected yet."
+    if (!event.currentTarget.reportValidity()) {
+      return;
+    }
+
+    if (formData.consent.length !== 6) {
+      setSubmitError("Please accept all six required declarations.");
+      return;
+    }
+
+    const languages = formData.knownLanguages.filter(
+      (language) => language !== "Other"
     );
+    if (
+      formData.knownLanguages.includes("Other") &&
+      formData.otherLanguages.trim()
+    ) {
+      languages.push(formData.otherLanguages.trim());
+    }
+
+    const payload = {
+      audition_type: formData.auditionType,
+      full_name: formData.fullName.trim(),
+      nickname: formData.nickname.trim() || null,
+      date_of_birth: formData.dateOfBirth,
+      age: Number(formData.age),
+      gender: formData.gender,
+      height: formData.height.trim() || null,
+      city: formData.city.trim(),
+      state: formData.state.trim() || null,
+      school_name: formData.schoolName.trim() || null,
+      hobbies: formData.hobbies.trim() || null,
+      languages,
+      primary_language: formData.primaryLanguage || null,
+      speaking_confidence: formData.speakingConfidence || null,
+      can_read_script: formData.confidenceHelp || null,
+      parent_name: formData.parentName.trim(),
+      relationship: formData.relationship,
+      mobile_number: formData.mobileNumber.trim(),
+      whatsapp_number: formData.whatsappNumber.trim() || null,
+      email: formData.email.trim(),
+      parent_city: formData.parentCity.trim(),
+      emergency_contact: formData.emergencyContact.trim(),
+      talents: formData.talentTypes,
+      previous_experience: formData.previousExperience === "Yes",
+      experience_details: formData.experienceDetails.trim() || null,
+      social_media_links: formData.socialMediaLinks.trim() || null,
+      closeup_photo: formData.recentCloseupPhoto.trim(),
+      full_length_photo: formData.fullLengthPhoto.trim(),
+      audition_video: formData.auditionVideo.trim(),
+      previous_work: formData.previousWork.trim() || null,
+      has_medical_condition: formData.medicalCondition === "Yes",
+      has_allergies: formData.allergies === "Yes",
+      on_regular_medication: formData.regularMedication === "Yes",
+      medical_details: formData.medicalDetails.trim() || null,
+      blood_group: formData.bloodGroup.trim() || null,
+      weekly_availability: formData.weeklyAvailability.length
+        ? JSON.stringify(formData.weeklyAvailability)
+        : null,
+      preferred_time_slot: formData.preferredTime.length
+        ? JSON.stringify(formData.preferredTime)
+        : null,
+      outdoor_shoot_comfort: formData.outdoorShoot === "Yes",
+      outstation_travel: formData.travelAvailability || null,
+      consent_information: formData.consent.includes("legalGuardian"),
+      consent_media_use: formData.consent.includes("processing"),
+      consent_promotion: formData.consent.includes("permission"),
+      consent_safety_rules: formData.consent.includes("safety"),
+      consent_selection_process: formData.consent.includes("decision"),
+      consent_education_priority: formData.consent.includes("educationPriority"),
+      digital_signature: formData.guardianSignature.trim(),
+      signature_date: formData.signatureDate,
+    };
+
+    setSaving(true);
+    setSubmitError("");
+    try {
+      await auditionsApi.create(payload);
+      window.alert("Audition application saved successfully.");
+      navigate("/admin/auditions");
+    } catch (error) {
+      console.error("Failed to save audition application:", error);
+      setSubmitError(error.message || "Unable to save the audition.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (window.confirm("Are you sure you want to sign out?")) {
-      navigate("/login");
+      try {
+        await logout();
+      } catch {
+        window.alert("Unable to sign out right now. Please try again.");
+      }
     }
   };
 
@@ -291,6 +384,15 @@ export default function CreateAuditionPage() {
         </header>
 
         <form className="audition-create-form" onSubmit={handleSubmit}>
+          {submitError && (
+            <div
+              className="audition-form-feedback audition-form-feedback-error"
+              role="alert"
+            >
+              {submitError}
+            </div>
+          )}
+
           <Section title="AUDITION TYPE">
             <Field
               label="Select Audition Type"
@@ -326,7 +428,7 @@ export default function CreateAuditionPage() {
                 ]}
               />
               <Field label="Height (Optional)" name="height" value={formData.height} onChange={updateField} />
-              <Field label="City (Optional)" name="city" value={formData.city} onChange={updateField} />
+              <Field label="City" name="city" value={formData.city} onChange={updateField} required />
               <Field label="State (Optional)" name="state" value={formData.state} onChange={updateField} />
               <Field label="School Name (Optional)" name="schoolName" value={formData.schoolName} onChange={updateField} />
               <Field label="Hobbies (Optional)" name="hobbies" value={formData.hobbies} onChange={updateField} />
@@ -556,6 +658,7 @@ export default function CreateAuditionPage() {
                 ]}
                 value={formData.outdoorShoot}
                 onChange={updateField}
+                required
               />
 
               <RadioGroup
@@ -587,7 +690,7 @@ export default function CreateAuditionPage() {
                 { value: "permission", label: "I have no objection to the use of the promotional and digital platform if selected." },
                 { value: "safety", label: "I will not ask or force my child to do anything unsafe." },
                 { value: "decision", label: "I understand that the selection process is purely based on the audition decision." },
-                { value: "privacy", label: "I confirm that all information provided is accurate." },
+                { value: "educationPriority", label: "I will ensure my child's education remains a priority." },
               ]}
               values={formData.consent}
               onChange={updateCheckbox}
@@ -623,8 +726,12 @@ export default function CreateAuditionPage() {
               Cancel
             </button>
 
-            <button type="submit" className="audition-save-button">
-              Save Audition
+            <button
+              type="submit"
+              className="audition-save-button"
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Audition"}
             </button>
           </div>
         </form>

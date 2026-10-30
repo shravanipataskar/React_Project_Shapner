@@ -45,6 +45,130 @@ input {
   font: inherit;
 }
 
+input:not(
+    [type="button"],
+    [type="checkbox"],
+    [type="color"],
+    [type="file"],
+    [type="hidden"],
+    [type="image"],
+    [type="radio"],
+    [type="range"],
+    [type="reset"],
+    [type="submit"]
+  ),
+textarea,
+select,
+.custom-select {
+  min-height: 50px !important;
+  padding: 12px 16px !important;
+  border: 2px solid rgba(255, 215, 0, 0.3) !important;
+  border-radius: 12px !important;
+  outline: none !important;
+  background-color: #242424 !important;
+  box-shadow: 0 5px 15px rgba(244, 180, 0, 0.1) !important;
+  color: #e8e8e8 !important;
+  font-family: "Outfit", sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+}
+
+select,
+.custom-select {
+  color-scheme: dark;
+  appearance: auto !important;
+}
+
+input:not(
+    [type="button"],
+    [type="checkbox"],
+    [type="color"],
+    [type="file"],
+    [type="hidden"],
+    [type="image"],
+    [type="radio"],
+    [type="range"],
+    [type="reset"],
+    [type="submit"]
+  ):hover:not(:disabled),
+textarea:hover:not(:disabled),
+select:hover:not(:disabled),
+.custom-select:hover:not(:disabled) {
+  border-color: rgba(255, 215, 0, 0.55) !important;
+}
+
+input:not(
+    [type="button"],
+    [type="checkbox"],
+    [type="color"],
+    [type="file"],
+    [type="hidden"],
+    [type="image"],
+    [type="radio"],
+    [type="range"],
+    [type="reset"],
+    [type="submit"]
+  ):focus,
+textarea:focus,
+select:focus,
+.custom-select:focus {
+  border-color: #ffd700 !important;
+  background-color: #242424 !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 215, 0, 0.15),
+    0 5px 15px rgba(244, 180, 0, 0.1) !important;
+}
+
+input:not(
+    [type="button"],
+    [type="checkbox"],
+    [type="color"],
+    [type="file"],
+    [type="hidden"],
+    [type="image"],
+    [type="radio"],
+    [type="range"],
+    [type="reset"],
+    [type="submit"]
+  ):disabled,
+textarea:disabled,
+select:disabled,
+.custom-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+input:not(
+    [type="button"],
+    [type="checkbox"],
+    [type="color"],
+    [type="file"],
+    [type="hidden"],
+    [type="image"],
+    [type="radio"],
+    [type="range"],
+    [type="reset"],
+    [type="submit"]
+  )::placeholder,
+textarea::placeholder {
+  color: #777 !important;
+  opacity: 1;
+}
+
+select option,
+.custom-select option {
+  padding: 8px 12px;
+  background-color: #242424 !important;
+  color: #e8e8e8 !important;
+}
+
+select option:checked,
+.custom-select option:checked {
+  background-color: #2166c5 !important;
+  color: #ffffff !important;
+}
+
 ::selection {
   color: #fff;
   background: var(--color-accent);

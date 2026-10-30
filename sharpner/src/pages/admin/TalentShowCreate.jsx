@@ -1,5 +1,7 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
+import { talentShowApi } from '../../services/talentShowApi.js'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/TalentShowCreate.css'
 
@@ -13,8 +15,62 @@ function getLocalDate() {
 }
 
 function TalentShowCreate() {
-  function handleSubmit(event) {
+  const navigate = useNavigate()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(event) {
     event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+    const payload = new FormData()
+    const textFields = {
+      child_name: 'childName',
+      parent_name: 'parentName',
+      age: 'age',
+      city: 'city',
+      contact_number: 'contactNumber',
+      what_makes_unique: 'childUniqueness',
+      talent_description: 'talentDescription',
+      social_media: 'socialMediaLink',
+      digital_signature: 'digitalSignature',
+      signature_date: 'date',
+    }
+
+    Object.entries(textFields).forEach(([apiField, formField]) => {
+      payload.append(apiField, String(formData.get(formField) ?? '').trim())
+    })
+
+    payload.append(
+      'declaration_true',
+      formData.has('confirmInformation') ? '1' : '0'
+    )
+    payload.append(
+      'declaration_review',
+      formData.has('materialConsent') ? '1' : '0',
+    )
+    payload.append(
+      'declaration_parent_presence',
+      formData.has('guardianPresence') ? '1' : '0'
+    )
+
+    const video = formData.get('talentVideo')
+    if (video instanceof File && video.size > 0) {
+      payload.append('talent_video', video)
+    }
+
+    setSaving(true)
+    setError('')
+    try {
+      await talentShowApi.create(payload)
+      window.alert('Talent Show application saved successfully.')
+      navigate('/admin/talent-show')
+    } catch (requestError) {
+      console.error('Failed to save Talent Show application:', requestError)
+      setError(requestError.message || 'Unable to save this application.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -42,6 +98,11 @@ function TalentShowCreate() {
             className="talent-show-create-form"
             onSubmit={handleSubmit}
           >
+            {error && (
+              <p className="talent-show-edit-message is-error" role="alert">
+                {error}
+              </p>
+            )}
             <label className="talent-show-create-field">
               <span>Child Name *</span>
               <input name="childName" type="text" required />
@@ -145,8 +206,9 @@ function TalentShowCreate() {
               <button
                 className="talent-show-button talent-show-button-add"
                 type="submit"
+                disabled={saving}
               >
-                Save Application
+                {saving ? 'Saving...' : 'Save Application'}
               </button>
             </div>
           </form>

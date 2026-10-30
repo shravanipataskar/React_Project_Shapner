@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
+import { ticketsApi } from '../../services/ticketsApi.js'
+import { API_BASE_URL, apiFetch } from '../../services/apiClient.js'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/TicketsAdmin.css'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
-
 function TicketsAdmin() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
 
   const statusFilter = pathname.endsWith('/inactive')
     ? 'inactive'
@@ -34,7 +34,7 @@ function TicketsAdmin() {
         setLoading(true)
         setError('')
 
-        const response = await fetch(`${API_BASE_URL}/tickets`, {
+        const response = await apiFetch(`${API_BASE_URL}/tickets`, {
           method: 'GET',
           headers: {
             Accept: 'application/json',
@@ -197,6 +197,43 @@ function TicketsAdmin() {
     setSearch('')
     setModuleFilter('')
     setOverallStatusFilter('')
+  }
+
+  // ---------------------------------------------------------
+  // ACTIVATE / DEACTIVATE TICKET
+  // ---------------------------------------------------------
+  async function handleToggleStatus(ticket, nextActive) {
+    const action = nextActive ? 'activate' : 'deactivate'
+    const confirmMessage = nextActive
+      ? `Are you sure you want to activate ticket ${ticket.ticketNo || ''}?`
+      : `Are you sure you want to deactivate ticket ${ticket.ticketNo || ''}?`
+
+    if (!window.confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      setError('')
+      await ticketsApi.updateStatus(ticket.id, nextActive)
+
+      // Update state locally so ticket moves to the right tab immediately
+      setTickets((prev) =>
+        prev.map((item) =>
+          item.id === ticket.id
+            ? { ...item, active: nextActive }
+            : item,
+        ),
+      )
+
+      window.alert(
+        nextActive
+          ? 'Ticket activated successfully.'
+          : 'Ticket deactivated successfully.',
+      )
+    } catch (err) {
+      console.error(`Failed to ${action} ticket:`, err)
+      window.alert(`Failed to ${action} ticket: ${err.message || 'Please try again.'}`)
+    }
   }
 
   return (
@@ -502,10 +539,7 @@ function TicketsAdmin() {
                             type="button"
                             className="talent-show-button talent-show-button-view"
                             onClick={() =>
-                              console.log(
-                                'View ticket:',
-                                ticket,
-                              )
+                              navigate(`/admin/tickets/${ticket.id}`)
                             }
                           >
                             View
@@ -515,27 +549,29 @@ function TicketsAdmin() {
                             type="button"
                             className="talent-show-button talent-show-button-edit"
                             onClick={() =>
-                              console.log(
-                                'Edit ticket:',
-                                ticket,
-                              )
+                              navigate(`/admin/tickets/${ticket.id}/edit`)
                             }
                           >
                             Edit
                           </button>
 
-                          <button
-                            type="button"
-                            className="talent-show-button talent-show-button-deactivate"
-                            onClick={() =>
-                              console.log(
-                                'Deactivate ticket:',
-                                ticket,
-                              )
-                            }
-                          >
-                            Deactivate
-                          </button>
+                          {statusFilter === 'active' ? (
+                            <button
+                              type="button"
+                              className="talent-show-button talent-show-button-deactivate"
+                              onClick={() => handleToggleStatus(ticket, false)}
+                            >
+                              Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="talent-show-button talent-show-button-activate"
+                              onClick={() => handleToggleStatus(ticket, true)}
+                            >
+                              Activate
+                            </button>
+                          )}
 
                         </div>
                       </td>

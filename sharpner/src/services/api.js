@@ -1,10 +1,7 @@
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000/api"
-).replace(/\/+$/, "");
+import { API_BASE_URL, apiFetch } from "./apiClient.js";
 
 async function request(endpoint, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await apiFetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       Accept: "application/json",
@@ -16,8 +13,15 @@ async function request(endpoint, options = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
+    const validationErrors =
+      response.status === 422 && data?.errors
+        ? Object.values(data.errors).flat().join("\n")
+        : "";
     const error = new Error(
-      data?.message || `Request failed with status ${response.status}`
+      validationErrors ||
+        (response.status >= 500
+          ? "The service could not complete the request. Please try again."
+          : data?.message || `Request failed with status ${response.status}`)
     );
 
     error.status = response.status;
@@ -32,29 +36,35 @@ export const videosApi = {
   getAll(params = {}) {
     const query = new URLSearchParams(params).toString();
 
+    return request(`/admin/videos${query ? `?${query}` : ""}`);
+  },
+
+  getPublicAll(params = {}) {
+    const query = new URLSearchParams(params).toString();
+
     return request(`/videos${query ? `?${query}` : ""}`);
   },
 
   getById(id) {
-    return request(`/videos/${id}`);
+    return request(`/admin/videos/${id}`);
   },
 
   create(video) {
-    return request("/videos", {
+    return request("/admin/videos", {
       method: "POST",
       body: JSON.stringify(video),
     });
   },
 
   update(id, video) {
-    return request(`/videos/${id}`, {
+    return request(`/admin/videos/${id}`, {
       method: "PUT",
       body: JSON.stringify(video),
     });
   },
 
   delete(id) {
-    return request(`/videos/${id}`, {
+    return request(`/admin/videos/${id}`, {
       method: "DELETE",
     });
   },
@@ -65,8 +75,26 @@ export const usersApi = {
     return request("/users");
   },
 
+  getCreateOptions() {
+    return request("/users/options");
+  },
+
+  create(user) {
+    return request("/users", {
+      method: "POST",
+      body: JSON.stringify(user),
+    });
+  },
+
   getById(id) {
     return request(`/users/${id}`);
+  },
+
+  update(id, user) {
+    return request(`/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(user),
+    });
   },
 
   updateStatus(id, status) {

@@ -192,6 +192,11 @@
   box-shadow: 0 12px 35px rgba(255, 215, 0, 0.35);
 }
 
+.admin-login-submit:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
 .admin-login-error {
   margin-bottom: 22px;
   padding: 14px 16px;

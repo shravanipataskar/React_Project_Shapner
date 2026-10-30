@@ -9,6 +9,41 @@ use Illuminate\Http\Request;
 class CollaborationRequestController extends Controller
 {
     /**
+     * Create a Brand Deal request.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+            'organization_name' => ['nullable', 'string', 'max:255'],
+            'brand_name' => ['required', 'string', 'max:255'],
+            'contact_person' => ['required', 'string', 'max:255'],
+            'collaboration_type' => ['required', 'in:brand'],
+            'email' => ['required', 'email', 'max:255'],
+            'instagram_or_website' => ['nullable', 'string', 'max:2048'],
+            'type_of_promotion' => ['required', 'string', 'max:255'],
+            'campaign_goal' => ['required', 'string'],
+            'budget_range' => ['required', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:50'],
+            'message' => ['required', 'string'],
+            'commercial_inquiry' => ['required', 'boolean'],
+            'review_status' => ['sometimes', 'integer', 'in:0,1,2'],
+        ]);
+
+        $collaboration = CollaborationRequest::create([
+            ...$validated,
+            'status' => 1,
+            'review_status' => $validated['review_status'] ?? 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Brand Deal created successfully.',
+            'data' => $collaboration,
+        ], 201);
+    }
+
+    /**
      * Display collaboration requests.
      */
     public function index(Request $request)

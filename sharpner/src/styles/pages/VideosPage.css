@@ -329,6 +329,47 @@ body:has(.sharpner-videos-page),
   background: var(--videos-card);
 }
 
+.videos-page-message {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.videos-page-message p {
+  margin: 0;
+}
+
+.videos-page-notice {
+  border-color: rgba(57, 190, 110, 0.45);
+  background: rgba(57, 190, 110, 0.1);
+  color: #a7efc1;
+}
+
+.videos-page-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-color: rgba(255, 214, 0, 0.4);
+  background: rgba(255, 214, 0, 0.08);
+  color: #ffe477;
+}
+
+.videos-page-warning button {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--videos-yellow);
+  color: #111111;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* ========================================
    SEARCH FORM
 ======================================== */

@@ -1,9 +1,42 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+import { API_BASE_URL, apiFetch } from "./apiClient.js";
 
 export const ideasApi = {
+  async createIdea(idea) {
+    let response;
+    try {
+      response = await apiFetch(`${API_BASE_URL}/admin/creative-ideas`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(idea),
+      });
+    } catch {
+      throw new Error(
+        "Unable to connect to the Creative Ideas service. Please try again."
+      );
+    }
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      const validationErrors =
+        response.status === 422 && result?.errors
+          ? Object.values(result.errors).flat().join("\n")
+          : "";
+      throw new Error(
+        validationErrors ||
+          (response.status >= 500
+            ? "Unable to save the creative idea. Please try again."
+            : result?.message || `Request failed: ${response.status}`)
+      );
+    }
+
+    return result;
+  },
+
   async getIdeas() {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/creative-ideas`,
       {
         method: "GET",
@@ -27,7 +60,7 @@ export const ideasApi = {
   },
 
   async getIdea(id) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/creative-ideas/${id}`,
       {
         method: "GET",
@@ -47,7 +80,7 @@ export const ideasApi = {
   },
 
   async updateStatus(id, status) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/creative-ideas/${id}/status`,
       {
         method: "PATCH",
@@ -71,7 +104,7 @@ export const ideasApi = {
   },
 
   async updateIdea(id, idea) {
-    const response = await fetch(`${API_BASE_URL}/creative-ideas/${id}`, {
+    const response = await apiFetch(`${API_BASE_URL}/creative-ideas/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

@@ -9,6 +9,34 @@ use Illuminate\Http\Request;
 class IdeaSubmissionController extends Controller
 {
     /**
+     * Create a Creative Idea submission.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'instagram' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'reel_idea' => ['required', 'string'],
+            'hook_line' => ['required', 'string'],
+            'viral_reason' => ['required', 'string'],
+            'credit_permission' => ['required', 'boolean'],
+        ]);
+
+        $idea = IdeaSubmission::create([
+            ...$validated,
+            'status' => 1,
+            'review_status' => 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Creative idea created successfully.',
+            'data' => $idea,
+        ], 201);
+    }
+
+    /**
      * Display Creative Idea submissions.
      */
     public function index(Request $request)

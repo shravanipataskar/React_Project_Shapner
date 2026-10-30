@@ -216,6 +216,12 @@ body:has(.sharpner-create-video),
   width: 100%;
 }
 
+.create-video-error {
+  margin: 0 0 20px;
+  color: #ff8d8d;
+  font-size: 13px;
+}
+
 /* ========================================
    FORM FIELDS
 ======================================== */

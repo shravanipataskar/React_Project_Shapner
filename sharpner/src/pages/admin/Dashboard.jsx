@@ -35,7 +35,7 @@ cards: [
 
 export default function Dashboard() {
   return (
-    <AdminLayout>
+    <AdminLayout pageClass="dashboard-page">
       <main className="dashboard-main">
         <header className="dashboard-header">
           <h1>

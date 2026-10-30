@@ -19,35 +19,35 @@ const consentOptions = [
   {
     value: "legalGuardian",
     label: "I am the legal parent / guardian and all above information is true.",
-    field: "information_consent",
+    field: "consent_information",
   },
   {
     value: "mediaUse",
     label:
       "I consent to the use of my child's photo, video and audition material for the selection process.",
-    field: "media_use_consent",
+    field: "consent_media_use",
   },
   {
     value: "promotion",
     label:
       "I have no objection to the use of promotional and digital platforms if selected.",
-    field: "promotion_consent",
+    field: "consent_promotion",
   },
   {
     value: "safety",
     label: "I will follow all rules given for child safety during shoot.",
-    field: "safety_rules_consent",
+    field: "consent_safety_rules",
   },
   {
     value: "selection",
     label:
       "I understand that the selection process is purely based on the creators' decision.",
-    field: "selection_process_consent",
+    field: "consent_selection_process",
   },
   {
     value: "education",
     label: "Child's education will be prioritized.",
-    field: "education_priority_consent",
+    field: "consent_education_priority",
   },
 ];
 
@@ -106,7 +106,10 @@ function asChoice(value) {
   if ([true, 1, "1"].includes(value) || String(value).toLowerCase() === "yes") {
     return "Yes";
   }
-  if ([false, 0, "0"].includes(value) || String(value).toLowerCase() === "no") {
+  if (
+    [false, 0, "0"].includes(value) ||
+    ["false", "no"].includes(String(value).toLowerCase())
+  ) {
     return "No";
   }
   return asString(value);
@@ -146,9 +149,13 @@ function asDateInput(value) {
   }
 
   const parsedDate = new Date(date);
-  return Number.isNaN(parsedDate.getTime())
-    ? ""
-    : parsedDate.toISOString().slice(0, 10);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+  const year = parsedDate.getFullYear();
+  const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+  const day = String(parsedDate.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getConsentValues(record) {
@@ -195,7 +202,7 @@ function mapAuditionToForm(record) {
     schoolName: asString(record.school_name),
     hobbies: asString(record.hobbies),
     knownLanguages: asArray(record.languages ?? record.languages_known),
-    otherLanguages: asString(record.other_language),
+    otherLanguages: asString(record.other_language ?? record.other_languages),
     primaryLanguage: asString(record.primary_language),
     speakingConfidence: asString(record.speaking_confidence),
     confidenceHelp: asString(record.can_read_script),
@@ -207,12 +214,14 @@ function mapAuditionToForm(record) {
     parentCity: asString(record.parent_city),
     emergencyContact: asString(record.emergency_contact),
     talentTypes: asArray(record.talents ?? record.talent_types),
-    otherTalent: asString(record.other_talent),
+    otherTalent: asString(record.other_talent ?? record.other_talents),
     previousExperience: asChoice(record.previous_experience),
     experienceDetails: asString(record.experience_details),
     socialMediaLinks: asString(record.social_media_links),
     recentCloseupPhoto: asString(
-      record.closeup_photo ?? record.recent_closeup_photo
+      record.closeup_photo ??
+        record.recent_closeup_photo ??
+        record.recent_close_up_photo
     ),
     fullLengthPhoto: asString(record.full_length_photo),
     auditionVideo: asString(record.audition_video),
@@ -226,13 +235,19 @@ function mapAuditionToForm(record) {
     preferredTime: asArray(record.preferred_time_slot),
     outdoorShoot: asChoice(record.outdoor_shoot_comfort),
     travelAvailability: asChoice(record.outstation_travel),
-    guardianSignature: asString(record.guardian_signature),
-    signatureDate: asDateInput(record.declaration_date),
+    guardianSignature: asString(
+      record.digital_signature ?? record.guardian_signature
+    ),
+    signatureDate: asDateInput(
+      record.signature_date ?? record.declaration_date
+    ),
     consent: getConsentValues(record),
   };
 }
 
 function toApiPayload(form) {
+  const toBoolean = (value) => value === true || value === 1 || value === "Yes";
+
   return {
     audition_type: form.auditionType,
     full_name: form.fullName,
@@ -259,31 +274,35 @@ function toApiPayload(form) {
     emergency_contact: form.emergencyContact,
     talents: form.talentTypes,
     other_talent: form.otherTalent,
-    previous_experience: form.previousExperience,
+    previous_experience: toBoolean(form.previousExperience),
     experience_details: form.experienceDetails,
     social_media_links: form.socialMediaLinks,
     closeup_photo: form.recentCloseupPhoto,
     full_length_photo: form.fullLengthPhoto,
     audition_video: form.auditionVideo,
     previous_work: form.previousWork,
-    has_medical_condition: form.medicalCondition,
-    has_allergies: form.allergies,
-    on_regular_medication: form.regularMedication,
+    has_medical_condition: toBoolean(form.medicalCondition),
+    has_allergies: toBoolean(form.allergies),
+    on_regular_medication: toBoolean(form.regularMedication),
     medical_details: form.medicalDetails,
     blood_group: form.bloodGroup,
-    weekly_availability: form.weeklyAvailability,
-    preferred_time_slot: form.preferredTime,
-    outdoor_shoot_comfort: form.outdoorShoot,
+    weekly_availability: form.weeklyAvailability.length
+      ? JSON.stringify(form.weeklyAvailability)
+      : null,
+    preferred_time_slot: form.preferredTime.length
+      ? JSON.stringify(form.preferredTime)
+      : null,
+    outdoor_shoot_comfort: toBoolean(form.outdoorShoot),
     outstation_travel: form.travelAvailability,
     declarations: form.consent,
-    guardian_signature: form.guardianSignature,
-    declaration_date: form.signatureDate,
-    ...Object.fromEntries(
-      consentOptions.map((option) => [
-        option.field,
-        form.consent.includes(option.value),
-      ])
-    ),
+    consent_information: form.consent.includes("legalGuardian"),
+    consent_media_use: form.consent.includes("mediaUse"),
+    consent_promotion: form.consent.includes("promotion"),
+    consent_safety_rules: form.consent.includes("safety"),
+    consent_selection_process: form.consent.includes("selection"),
+    consent_education_priority: form.consent.includes("education"),
+    digital_signature: form.guardianSignature,
+    signature_date: form.signatureDate,
   };
 }
 
@@ -474,7 +493,7 @@ export default function EditAuditionPage() {
 
     try {
       await auditionsApi.update(id, toApiPayload(formData));
-      navigate(`/admin/auditions/${encodeURIComponent(id)}`);
+      navigate("/admin/talent-show");
     } catch (error) {
       console.error("Failed to update audition:", error);
       setSubmitError(getErrorMessage(error));
@@ -486,7 +505,11 @@ export default function EditAuditionPage() {
   const goBack = () => navigate("/admin/auditions");
 
   const existingLanguageOptions = choices([
-    ...new Set([...languageOptions, ...(formData?.knownLanguages ?? [])]),
+    ...new Set([
+      ...languageOptions,
+      ...(formData?.knownLanguages ?? []),
+      ...(formData?.primaryLanguage ? [formData.primaryLanguage] : []),
+    ]),
   ]);
   const existingTalentOptions = choices([
     ...new Set([...talentOptions, ...(formData?.talentTypes ?? [])]),

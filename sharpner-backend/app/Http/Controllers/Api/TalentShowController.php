@@ -5,10 +5,71 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\TalentShow;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class TalentShowController extends Controller
 {
+    /**
+     * Create a Talent Show application.
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'child_name' => ['required', 'string', 'max:255'],
+            'parent_name' => ['required', 'string', 'max:255'],
+            'age' => ['required', 'integer', 'min:0', 'max:120'],
+            'city' => ['required', 'string', 'max:255'],
+            'contact_number' => ['required', 'string', 'max:255'],
+            'what_makes_unique' => ['nullable', 'string'],
+            'talent_description' => ['nullable', 'string'],
+            'talent_video' => ['nullable', 'file', 'mimes:mp4,mov,avi', 'max:512000'],
+            'social_media' => ['nullable', 'url:http,https', 'max:2048'],
+            'declaration_true' => ['sometimes', 'boolean'],
+            'declaration_review' => ['sometimes', 'boolean'],
+            'declaration_parent_presence' => ['sometimes', 'boolean'],
+            'digital_signature' => ['required', 'string', 'max:255'],
+            'signature_date' => ['required', 'date'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        $videoPath = null;
+
+        try {
+            if ($request->hasFile('talent_video')) {
+                $videoPath = $request->file('talent_video')
+                    ->store('talent-videos', 'public');
+                $data['talent_video'] = $videoPath;
+            }
+
+            $application = TalentShow::create([
+                ...$data,
+                'declaration_true' => $data['declaration_true'] ?? false,
+                'declaration_review' => $data['declaration_review'] ?? false,
+                'declaration_parent_presence' => $data['declaration_parent_presence'] ?? false,
+                'status' => 1,
+            ]);
+        } catch (\Throwable $exception) {
+            if ($videoPath) {
+                Storage::disk('public')->delete($videoPath);
+            }
+
+            throw $exception;
+        }
+
+        return response()->json([
+            'message' => 'Talent Show application created successfully.',
+            'data' => $application,
+        ], 201);
+    }
+
     /**
      * Return paginated Talent Show applications.
      */

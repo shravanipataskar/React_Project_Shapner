@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { usersApi } from '../../services/api.js'
 import '../../styles/pages/UserCreatePage.css'
@@ -20,8 +20,15 @@ function displayUserType(value) {
   return String(value ?? '') === '00' ? 'Super Admin' : String(value ?? '')
 }
 
+function userTypeValue(value) {
+  return String(value).trim().toLowerCase() === 'super admin'
+    ? '00'
+    : String(value).trim()
+}
+
 function UserEditPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const location = useLocation()
   const returnPath =
     location.state?.from === '/admin/users/inactive'
@@ -31,6 +38,7 @@ function UserEditPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [saveError, setSaveError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -84,7 +92,7 @@ function UserEditPage() {
     setSaveError('')
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     const form = event.currentTarget
     if (!form.reportValidity()) return
@@ -97,9 +105,37 @@ function UserEditPage() {
       return
     }
 
-    setSaveError(
-      'Saving changes is unavailable until admin authentication is connected.',
-    )
+    const user = {
+      ...formData,
+      username: formData.username.trim() || null,
+      user_type: userTypeValue(formData.user_type),
+      status: Number(formData.status),
+    }
+
+    if (!user.password) {
+      delete user.password
+      delete user.password_confirmation
+    }
+
+    setSaving(true)
+    setSaveError('')
+
+    try {
+      await usersApi.update(id, user)
+      navigate(returnPath, {
+        replace: true,
+        state: { notice: 'User updated successfully.' },
+      })
+    } catch (error) {
+      console.error('Failed to update user:', error)
+      setSaveError(
+        error.status === 422
+          ? error.message
+          : 'Unable to update this user. Please try again.',
+      )
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -249,9 +285,10 @@ function UserEditPage() {
               <button
                 type="submit"
                 className="user-create-save"
+                disabled={saving}
               >
                 <span aria-hidden="true">⚡</span>
-                Update User
+                {saving ? 'Saving...' : 'Update User'}
               </button>
               <Link className="user-create-cancel" to={returnPath}>
                 Cancel

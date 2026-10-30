@@ -4,12 +4,10 @@ import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { downloadCsv } from '../../utils/downloadCsv.js'
 import { downloadPdf } from '../../utils/downloadPdf.js'
 import { ideasApi } from '../../services/ideasApi.js'
+import { API_BASE_URL, apiFetch } from '../../services/apiClient.js'
 
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CreativeIdeasAdmin.css'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 
 const API_URL = `${API_BASE_URL}/creative-ideas`
 
@@ -111,7 +109,7 @@ function CreativeIdeasAdmin() {
         const apiUrl = new URL(API_URL)
         apiUrl.searchParams.set('status', statusFilter === 'active' ? '1' : '0')
 
-        const response = await fetch(apiUrl, {
+        const response = await apiFetch(apiUrl, {
           method: 'GET',
 
           headers: {

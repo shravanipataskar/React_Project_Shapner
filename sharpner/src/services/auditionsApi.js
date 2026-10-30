@@ -1,9 +1,41 @@
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000/api"
-).replace(/\/+$/, "");
+import { API_BASE_URL, apiFetch } from "./apiClient.js";
 
 export const auditionsApi = {
+  async create(audition) {
+    let response;
+
+    try {
+      response = await apiFetch(`${API_BASE_URL}/admin/auditions`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(audition),
+      });
+    } catch {
+      throw new Error(
+        "Unable to connect to the audition service. Please try again."
+      );
+    }
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok) {
+      const validationErrors =
+        response.status === 422 && result?.errors
+          ? Object.values(result.errors).flat().join("\n")
+          : "";
+      throw new Error(
+        validationErrors ||
+          (response.status >= 500
+            ? "Unable to save the audition. Please try again."
+            : result?.message || `Request failed: ${response.status}`)
+      );
+    }
+
+    return result;
+  },
+
   async getAll({ status = 1, search = "", page = 1 } = {}) {
     const params = new URLSearchParams({
       status: String(status),
@@ -14,7 +46,7 @@ export const auditionsApi = {
       params.set("search", search.trim());
     }
 
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/auditions?${params.toString()}`,
       {
         headers: {
@@ -35,7 +67,7 @@ export const auditionsApi = {
   },
 
   async getById(id, { signal } = {}) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/auditions/${encodeURIComponent(id)}`,
       {
         signal,
@@ -59,7 +91,7 @@ export const auditionsApi = {
   },
 
   async update(id, audition) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/auditions/${encodeURIComponent(id)}`,
       {
         method: "PUT",
@@ -85,7 +117,7 @@ export const auditionsApi = {
   },
 
   async updateStatus(id, status) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/auditions/${encodeURIComponent(id)}/status`,
       {
         method: "PATCH",

@@ -127,7 +127,7 @@
 }
 
 .tickets-create-field > select:invalid {
-  color: #d3d3d3;
+  color: #fff !important;
 }
 
 .tickets-create-field > textarea {
@@ -243,6 +243,7 @@
 }
 
 .tickets-create-item {
+  position: relative;
   min-width: 0;
   margin: 0;
   padding: clamp(40px, 4vw, 70px) clamp(20px, 1.5vw, 29px)
@@ -252,7 +253,34 @@
   background: #242424;
 }
 
-.tickets-create-item legend {
+.tickets-create-remove-item {
+  position: absolute;
+  top: clamp(14px, 1.1vw, 21px);
+  right: clamp(14px, 1.1vw, 21px);
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #d92e43;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tickets-create-remove-item:hover {
+  background: #bd2437;
+}
+
+.tickets-create-remove-item:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.tickets-create-item > legend {
+  float: none;
+  width: auto;
   padding: 0;
   color: var(--ticket-yellow);
   font-size: clamp(13px, 0.83vw, 16px);

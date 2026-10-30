@@ -1,13 +1,64 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
+import { collaborationsApi } from '../../services/collaborationsApi.js'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CollaborationsAdmin.css'
 import '../../styles/pages/CollaborationCreateAdmin.css'
 
 function CollaborationCreateAdmin() {
-  function handleSubmit(event) {
+  const navigate = useNavigate()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(event) {
     event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+
+    setSaving(true)
+    setError('')
+    try {
+      await collaborationsApi.createAdmin({
+        name: String(formData.get('name') ?? '').trim() || null,
+        organization_name:
+          String(formData.get('organizationName') ?? '').trim() || null,
+        brand_name: String(formData.get('brandName') ?? '').trim(),
+        contact_person: String(formData.get('contactPerson') ?? '').trim(),
+        collaboration_type: 'brand',
+        email: String(formData.get('email') ?? '').trim(),
+        phone_number: String(formData.get('phoneNumber') ?? '').trim() || null,
+        instagram_or_website:
+          String(formData.get('website') ?? '').trim() || null,
+        type_of_promotion: String(formData.get('promotionType') ?? ''),
+        budget_range: String(formData.get('budgetRange') ?? ''),
+        campaign_goal: String(formData.get('campaignGoal') ?? '').trim(),
+        message: String(formData.get('additionalMessage') ?? '').trim(),
+        commercial_inquiry: formData.has('commercialInquiry'),
+        review_status: Number(formData.get('reviewStatus')),
+      })
+      window.alert('Brand Deal saved successfully.')
+      navigate('/admin/collaborations')
+    } catch (requestError) {
+      console.error('Failed to save Brand Deal:', requestError)
+      setError(requestError.message || 'Unable to save this Brand Deal.')
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const promotionTypes = [
+    ['sponsored_video', 'Sponsored Video'],
+    ['product_placement', 'Product Placement'],
+    ['event_sponsorship', 'Event Sponsorship'],
+    ['creative_campaign', 'Creative Campaign'],
+    ['other', 'Other'],
+  ]
+  const budgetRanges = [
+    ['10k-50k', '₹10K - ₹50K'],
+    ['50k-1L', '₹50K - ₹1 Lakh'],
+    ['1L-5L', '₹1 Lakh - ₹5 Lakhs'],
+    ['5L+', '₹5 Lakhs+'],
+  ]
 
   return (
     <AdminLayout pageClass="collaborations-admin collaboration-create-admin">
@@ -33,6 +84,11 @@ function CollaborationCreateAdmin() {
             className="collaboration-create-form"
             onSubmit={handleSubmit}
           >
+            {error && (
+              <p className="talent-show-data-message is-error" role="alert">
+                {error}
+              </p>
+            )}
             <div className="collaboration-create-section">
               <h2 className="collaboration-create-section-title">
                 Brand &amp; Contact Information
@@ -93,6 +149,9 @@ function CollaborationCreateAdmin() {
                     <option value="" disabled>
                       Select type of promotion
                     </option>
+                    {promotionTypes.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
                   </select>
                 </label>
 
@@ -102,13 +161,18 @@ function CollaborationCreateAdmin() {
                     <option value="" disabled>
                       Select budget range
                     </option>
+                    {budgetRanges.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
                   </select>
                 </label>
 
                 <label className="collaboration-create-field">
                   <span>Review Status</span>
-                  <select name="reviewStatus" defaultValue="pending">
-                    <option value="pending">Pending</option>
+                  <select name="reviewStatus" defaultValue="0">
+                    <option value="0">Pending</option>
+                    <option value="1">Reviewed</option>
+                    <option value="2">Rejected</option>
                   </select>
                 </label>
 
@@ -139,8 +203,9 @@ function CollaborationCreateAdmin() {
               <button
                 className="talent-show-button talent-show-button-add"
                 type="submit"
+                disabled={saving}
               >
-                Save Brand Deal
+                {saving ? 'Saving...' : 'Save Brand Deal'}
               </button>
             </div>
           </form>

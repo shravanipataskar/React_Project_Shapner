@@ -1,30 +1,47 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../components/layout/AdminLayout.jsx";
+import { useAuth } from "../../app/authContext.js";
 import "../../styles/pages/LoginPage.css";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
 
-    if (!username.trim() || !password) {
-      setError("Please enter your username and password.");
+    if (!username.trim()) {
+      setError("Username is required.");
       return;
     }
 
-    // UI only: connect this form to your authentication API
-    // before using it for real admin login.
-    console.log("Login form submitted", {
-      username: username.trim(),
-    });
+    if (!password) {
+      setError("Password is required.");
+      return;
+    }
 
-    setError("Authentication API is not connected yet.");
+    setSubmitting(true);
+
+    try {
+      await login(username.trim(), password);
+      navigate("/admin/dashboard", { replace: true });
+    } catch (loginError) {
+      setError(
+        loginError.status === 401
+          ? "Invalid username or password."
+          : "Unable to sign in right now. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -42,7 +59,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form noValidate onSubmit={handleSubmit}>
             <div className="admin-login-form-group">
               <label htmlFor="admin-username">Username</label>
 
@@ -107,8 +124,12 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button className="admin-login-submit" type="submit">
-              SIGN IN
+            <button
+              className="admin-login-submit"
+              type="submit"
+              disabled={submitting}
+            >
+              {submitting ? "Signing in..." : "SIGN IN"}
             </button>
           </form>
         </section>

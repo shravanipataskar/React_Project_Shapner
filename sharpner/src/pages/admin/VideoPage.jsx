@@ -2,6 +2,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { videosApi } from "../../services/api";
+import { useAuth } from "../../app/authContext.js";
+import { getVideoMetadata } from "../../services/videoMetadata.js";
 import {
   adminNavigationItems,
   isAdminNavigationItemActive,
@@ -11,6 +13,7 @@ import "../../styles/pages/VideosPage.css";
 export default function VideosPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const [searchInput, setSearchInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -29,6 +32,19 @@ export default function VideosPage() {
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [updatingVideoId, setUpdatingVideoId] = useState(null);
+  const notice = location.state?.notice;
+
+  useEffect(() => {
+    if (!notice) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      navigate(location.pathname, { replace: true, state: null });
+    }, 3500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [location.pathname, navigate, notice]);
 
   // Load videos from the Laravel API.
   const loadVideos = useCallback(async () => {
@@ -41,18 +57,12 @@ export default function VideosPage() {
       });
 
       // Laravel pagination returns records inside response.data.
-      const records = Array.isArray(response?.data)
-        ? response.data
-        : [];
-
+      const records = Array.isArray(response?.data) ? response.data : [];
       setVideos(records);
     } catch (err) {
       console.error("Failed to load videos:", err);
       setVideos([]);
-      setError(
-        err.message ||
-          "Unable to load videos. Please check your connection and try again."
-      );
+      setError("Unable to load videos. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -96,17 +106,21 @@ export default function VideosPage() {
     setError("");
 
     try {
-      await videosApi.update(editingVideo.id, {
-        video_url: editForm.video_url,
+      const videoUrl = editForm.video_url.trim();
+      const updates = {
+        ...getVideoMetadata(videoUrl),
+        video_url: videoUrl,
         type: editForm.type,
         display_order: Number(editForm.display_order),
-      });
+      };
+
+      await videosApi.update(editingVideo.id, updates);
       setEditingVideo(null);
       await loadVideos();
     } catch (err) {
       console.error("Failed to update video:", err);
       setError(
-        err.message || "Unable to update this video. Please try again."
+        "Unable to update this video. Please check the URL and try again."
       );
     } finally {
       setSavingEdit(false);
@@ -125,23 +139,26 @@ export default function VideosPage() {
     setError("");
 
     try {
-      await videosApi.update(video.id, { status: activating ? 1 : 0 });
+      const status = activating ? 1 : 0;
+      await videosApi.update(video.id, { status });
       await loadVideos();
     } catch (err) {
       console.error(`Failed to ${action} video:`, err);
-      setError(
-        err.message || `Unable to ${action} this video. Please try again.`
-      );
+      setError(`Unable to ${action} this video. Please try again.`);
     } finally {
       setUpdatingVideoId(null);
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     const confirmed = window.confirm("Are you sure you want to sign out?");
 
     if (confirmed) {
-      navigate("/login");
+      try {
+        await logout();
+      } catch {
+        window.alert("Unable to sign out right now. Please try again.");
+      }
     }
   };
 
@@ -259,7 +276,13 @@ export default function VideosPage() {
 
         {/* Search and table container */}
         <section className="videos-content-card">
-          {/* Search form */}
+        {notice && (
+          <div className="videos-page-message videos-page-notice" role="status">
+            {notice}
+          </div>
+        )}
+
+        {/* Search form */}
           {statusFilter === "Active" && (
             <form
               className="videos-search-form"
@@ -291,7 +314,7 @@ export default function VideosPage() {
 
           {/* Error message */}
           {error && (
-            <div role="alert" className="videos-error-message">
+            <div role="alert" className="videos-page-message videos-page-warning">
               <p>{error}</p>
 
               <button type="button" onClick={loadVideos}>
@@ -324,7 +347,7 @@ export default function VideosPage() {
                       Loading videos...
                     </td>
                   </tr>
-                ) : error ? (
+                ) : error && filteredVideos.length === 0 ? (
                   <tr>
                     <td
                       colSpan={statusFilter === "Active" ? 6 : 5}

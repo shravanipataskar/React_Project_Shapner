@@ -1,13 +1,43 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
+import { ideasApi } from '../../services/ideasApi.js'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CreativeIdeasAdmin.css'
 import '../../styles/pages/CreativeIdeaCreateAdmin.css'
 
 function CreativeIdeaCreateAdmin() {
-  function handleSubmit(event) {
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(event) {
     event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const permission = formData.get('permission')
+
+    setSaving(true)
+    setError('')
+    try {
+      await ideasApi.createIdea({
+        name: String(formData.get('name') ?? '').trim(),
+        instagram: String(formData.get('instagramUsername') ?? '').trim() || null,
+        email: String(formData.get('email') ?? '').trim() || null,
+        reel_idea: String(formData.get('creativeIdea') ?? '').trim(),
+        hook_line: String(formData.get('suggestedHook') ?? '').trim(),
+        viral_reason: String(formData.get('whyItWillWork') ?? '').trim(),
+        credit_permission: permission === 'yes',
+      })
+      window.alert('Creative idea saved successfully.')
+      navigate('/admin/ideas')
+    } catch (requestError) {
+      console.error('Failed to save creative idea:', requestError)
+      setError(requestError.message || 'Unable to save this idea.')
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const navigate = useNavigate()
 
   return (
     <AdminLayout pageClass="creative-ideas-admin">
@@ -34,6 +64,11 @@ function CreativeIdeaCreateAdmin() {
             className="creative-idea-create-form"
             onSubmit={handleSubmit}
           >
+            {error && (
+              <p className="creative-idea-edit-error" role="alert">
+                {error}
+              </p>
+            )}
             <label className="creative-idea-create-field">
               <span>Name *</span>
               <input name="name" type="text" required />
@@ -95,8 +130,9 @@ function CreativeIdeaCreateAdmin() {
               <button
                 className="talent-show-button talent-show-button-add"
                 type="submit"
+                disabled={saving}
               >
-                Save Idea
+                {saving ? 'Saving...' : 'Save Idea'}
               </button>
             </div>
           </form>

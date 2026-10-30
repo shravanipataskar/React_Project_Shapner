@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiFetch } from "../../services/apiClient.js";
 import "../../styles/pages/CreativeIdeaSubmission.css";
 
 const INITIAL_FORM = {
@@ -116,7 +117,7 @@ function CreativeIdeaSubmission() {
 
     try {
       if (apiUrl) {
-        const response = await fetch(apiUrl, {
+        const response = await apiFetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

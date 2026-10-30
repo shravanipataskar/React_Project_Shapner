@@ -1,14 +1,11 @@
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000/api"
-).replace(/\/+$/, "");
+import { API_BASE_URL, apiFetch } from "./apiClient.js";
 
 async function request(endpoint, options = {}) {
   let response;
 
   try {
-    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    response = await apiFetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
         Accept: "application/json",
@@ -31,15 +28,17 @@ async function request(endpoint, options = {}) {
   const result = await response.json().catch(() => null);
 
   if (!response.ok) {
+    const validationErrors =
+      response.status === 422 && result?.errors
+        ? Object.values(result.errors).flat().join("\n")
+        : "";
     const error = new Error(
-      result?.message || `Request failed with status ${response.status}`
+      validationErrors ||
+        (response.status >= 500
+          ? "Unable to save the application. Please try again."
+          : result?.message || `Request failed with status ${response.status}`)
     );
     error.status = response.status;
-
-    if (response.status === 422 && result?.errors) {
-      const messages = Object.values(result.errors).flat().join("\n");
-      error.message = messages;
-    }
 
     throw error;
   }
@@ -66,7 +65,7 @@ export const dholPathakApi = {
   },
 
   create(data) {
-    return request("/dhol-pathaks", {
+    return request("/admin/dhol-pathaks", {
       method: "POST",
       body: JSON.stringify(data),
     });

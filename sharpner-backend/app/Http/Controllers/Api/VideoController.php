@@ -4,17 +4,29 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Video;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class VideoController extends Controller
 {
     /**
-     * Display all videos and shorts.
+     * Display active videos and shorts for the public site.
      *
      * GET /api/videos
      */
     public function index(Request $request)
+    {
+        return $this->videosResponse($request, false);
+    }
+
+    public function adminIndex(Request $request)
+    {
+        return $this->videosResponse($request, true);
+    }
+
+    private function videosResponse(Request $request, bool $allowStatusFilter)
     {
         $query = Video::query();
 
@@ -40,7 +52,7 @@ class VideoController extends Controller
         }
 
         // Show only active videos unless status is explicitly supplied.
-        if ($request->filled('status')) {
+        if ($allowStatusFilter && $request->filled('status')) {
             $request->validate([
                 'status' => ['required', 'boolean'],
             ]);
@@ -59,9 +71,9 @@ class VideoController extends Controller
     }
 
     /**
-     * Display a single video.
+     * Display a single video for the admin interface.
      *
-     * GET /api/videos/{id}
+     * GET /api/admin/videos/{id}
      */
     public function show($id)
     {
@@ -73,13 +85,13 @@ class VideoController extends Controller
     /**
      * Create a video.
      *
-     * POST /api/videos
+     * POST /api/admin/videos
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'video_url' => ['required', 'string'],
+            'title' => ['required_if:platform,instagram', 'nullable', 'string', 'max:255'],
+            'video_url' => ['required', 'url:http,https'],
             'video_id' => ['required', 'string', 'max:255'],
             'platform' => [
                 'required',
@@ -95,6 +107,13 @@ class VideoController extends Controller
             'updated_by_id' => ['nullable', 'integer'],
         ]);
 
+        if ($validated['platform'] === 'youtube') {
+            $validated['title'] = $this->youtubeTitleOrFallback(
+                $this->fetchYouTubeTitle($validated['video_url']),
+                $validated['title'] ?? null,
+            );
+        }
+
         $video = Video::create($validated);
 
         return response()->json([
@@ -106,7 +125,7 @@ class VideoController extends Controller
     /**
      * Update a video.
      *
-     * PUT /api/videos/{id}
+     * PUT /api/admin/videos/{id}
      */
     public function update(Request $request, $id)
     {
@@ -114,7 +133,7 @@ class VideoController extends Controller
 
         $validated = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'video_url' => ['sometimes', 'required', 'string'],
+            'video_url' => ['sometimes', 'required', 'url:http,https'],
             'video_id' => ['sometimes', 'required', 'string', 'max:255'],
             'platform' => [
                 'sometimes',
@@ -131,6 +150,16 @@ class VideoController extends Controller
             'status' => ['sometimes', 'boolean'],
             'updated_by_id' => ['sometimes', 'nullable', 'integer'],
         ]);
+
+        if (
+            ($validated['platform'] ?? $video->platform) === 'youtube' &&
+            array_key_exists('video_url', $validated)
+        ) {
+            $validated['title'] = $this->youtubeTitleOrFallback(
+                $this->fetchYouTubeTitle($validated['video_url']),
+                $validated['title'] ?? $video->title,
+            );
+        }
 
         $video->update($validated);
 
@@ -154,5 +183,46 @@ class VideoController extends Controller
         return response()->json([
             'message' => 'Video deleted successfully.',
         ]);
+    }
+
+    private function fetchYouTubeTitle(string $videoUrl): ?string
+    {
+        $host = strtolower((string) parse_url($videoUrl, PHP_URL_HOST));
+        if (! in_array($host, ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'], true)) {
+            return null;
+        }
+
+        try {
+            $response = Http::acceptJson()
+                ->timeout(4)
+                ->get('https://www.youtube.com/oembed', [
+                    'url' => $videoUrl,
+                    'format' => 'json',
+                ]);
+        } catch (ConnectionException $exception) {
+            report($exception);
+
+            return null;
+        }
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $title = trim((string) $response->json('title'));
+
+        return $title !== '' ? $title : null;
+    }
+
+    private function youtubeTitleOrFallback(?string $title, ?string $fallback): string
+    {
+        $title = trim((string) $title);
+        if ($title !== '') {
+            return $title;
+        }
+
+        $fallback = trim((string) $fallback);
+
+        return $fallback !== '' ? $fallback : 'Untitled video';
     }
 }

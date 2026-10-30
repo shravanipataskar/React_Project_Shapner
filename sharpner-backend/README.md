@@ -64,3 +64,7 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Admin SPA authentication
+
+The React admin uses Laravel Sanctum session-cookie authentication against the existing `users` table. Active administrator accounts are identified by an admin/administrator role name or the existing `00` super-admin user type. Configure `SANCTUM_STATEFUL_DOMAINS` and `CORS_ALLOWED_ORIGINS` for the frontend origin, set `SESSION_SECURE_COOKIE=true` when serving over HTTPS, and set the React app's `VITE_API_BASE_URL` to this backend's `/api` URL when it is not running on the local default.

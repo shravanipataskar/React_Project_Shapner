@@ -789,6 +789,12 @@ body:has(.sharpner-create-audition),
 }
 
 @media (max-width: 850px) {
+  .audition-edit-page .auditions-mobile-toggle {
+    border-color: rgba(255, 214, 0, 0.4);
+    background: #191919;
+    color: #ffd600;
+  }
+
   .audition-edit-page .auditions-sidebar {
     width: 235px;
     transform: translateX(-100%);

@@ -1,20 +1,33 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+import { API_BASE_URL, apiFetch } from "./apiClient.js";
 
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-      ...options.headers,
-    },
-  });
+  let response;
+  try {
+    response = await apiFetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        Accept: "application/json",
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...options.headers,
+      },
+    });
+  } catch {
+    throw new Error(
+      "Unable to connect to the Brand Deals service. Please try again.",
+    );
+  }
   const result = await response.json().catch(() => null);
 
   if (!response.ok) {
+    const validationErrors =
+      response.status === 422 && result?.errors
+        ? Object.values(result.errors).flat().join("\n")
+        : "";
     throw new Error(
-      result?.message || `Brand Deal request failed. HTTP ${response.status}`,
+      validationErrors ||
+        (response.status >= 500
+          ? "Unable to save the Brand Deal. Please try again."
+          : result?.message || `Brand Deal request failed. HTTP ${response.status}`),
     );
   }
 
@@ -22,6 +35,20 @@ async function request(path, options = {}) {
 }
 
 export const collaborationsApi = {
+  createAdmin(data) {
+    return request("/admin/collaborations", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  create(data) {
+    return request("/collaborations", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
   getAll() {
     return request("/collaborations");
   },

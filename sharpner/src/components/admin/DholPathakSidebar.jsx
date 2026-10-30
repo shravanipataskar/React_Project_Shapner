@@ -1,4 +1,5 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "../../app/authContext.js";
 import {
   adminNavigationItems,
   isAdminNavigationItemActive,
@@ -6,10 +7,15 @@ import {
 
 export default function DholPathakSidebar({ isOpen, onClose, onToggle }) {
   const { pathname } = useLocation();
+  const { logout } = useAuth();
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (window.confirm("Are you sure you want to sign out?")) {
-      window.location.href = "/login";
+      try {
+        await logout();
+      } catch {
+        window.alert("Unable to sign out right now. Please try again.");
+      }
     }
   };
 

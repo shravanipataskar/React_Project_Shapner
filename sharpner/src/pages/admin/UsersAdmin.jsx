@@ -6,7 +6,9 @@ import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/UsersAdmin.css'
 
 function UsersAdmin() {
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const { pathname } = location
+  const notice = location.state?.notice
 
   const statusFilter = pathname.endsWith('/inactive')
     ? 'inactive'
@@ -183,6 +185,12 @@ function UsersAdmin() {
           className="talent-show-card users-card"
           aria-label="Users"
         >
+          {notice && (
+            <p className="users-feedback" role="status">
+              {notice}
+            </p>
+          )}
+
           {statusFilter === 'active' && (
             <form
               className="talent-show-search users-search"
