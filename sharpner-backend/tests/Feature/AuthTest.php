@@ -46,7 +46,12 @@ class AuthTest extends TestCase
 
     public function test_admin_can_login_refresh_session_and_logout(): void
     {
+        $roleId = DB::table('user_roles')->insertGetId([
+            'name' => 'Admin',
+        ]);
+
         DB::table('users')->insert([
+            'user_role_id' => $roleId,
             'name' => 'Admin User',
             'username' => 'admin-user',
             'email' => 'admin@example.test',
@@ -64,6 +69,7 @@ class AuthTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('success', true)
+            ->assertJsonPath('user.user_type', '00')
             ->assertJsonPath('user.role', 'super_admin')
             ->assertJsonMissingPath('user.password');
 
@@ -110,7 +116,12 @@ class AuthTest extends TestCase
 
     public function test_non_admin_can_sign_in_but_cannot_access_admin_data(): void
     {
+        $roleId = DB::table('user_roles')->insertGetId([
+            'name' => 'Super Admin',
+        ]);
+
         DB::table('users')->insert([
+            'user_role_id' => $roleId,
             'name' => 'Regular User',
             'username' => 'regular-user',
             'email' => 'regular@example.test',
@@ -127,7 +138,8 @@ class AuthTest extends TestCase
                 'password' => 'secure-password',
             ])
             ->assertOk()
-            ->assertJsonPath('user.role', 'member');
+                ->assertJsonPath('user.user_type', 'member')
+                ->assertJsonPath('user.role', 'member');
 
         $this->withHeaders($origin)
             ->getJson('/api/auth/me')
@@ -156,6 +168,7 @@ class AuthTest extends TestCase
                 'password' => 'secure-password',
             ])
             ->assertOk()
+            ->assertJsonPath('user.user_type', '11')
             ->assertJsonPath('user.role', 'admin');
 
         $this->withHeaders(['Origin' => 'http://localhost:5173'])

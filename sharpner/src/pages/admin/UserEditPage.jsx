@@ -3,6 +3,11 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { usersApi } from '../../services/api.js'
 import { getUserTypeLabel, getUserTypeValue } from '../../utils/userTypes.js'
+import { 
+  sanitizePhoneInput,
+  getPhoneErrorMessage,
+  getEmailErrorMessage
+} from '../../utils/validation'
 import '../../styles/pages/UserCreatePage.css'
 
 const initialForm = {
@@ -34,6 +39,7 @@ function UserEditPage() {
   const [loadError, setLoadError] = useState('')
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({})
 
   useEffect(() => {
     let cancelled = false
@@ -83,8 +89,26 @@ function UserEditPage() {
 
   function updateField(event) {
     const { name, value } = event.target
-    setFormData((previous) => ({ ...previous, [name]: value }))
+    
+    // Sanitize phone fields to allow only numeric input
+    let cleanedValue = value
+    if (name === 'phone_number' || name === 'whatsapp_number') {
+      cleanedValue = sanitizePhoneInput(value)
+      if (cleanedValue.length > 10) {
+        cleanedValue = cleanedValue.slice(0, 10)
+      }
+    }
+    
+    setFormData((previous) => ({ ...previous, [name]: cleanedValue }))
     setSaveError('')
+    
+    // Clear field error when user edits
+    if (fieldErrors[name]) {
+      setFieldErrors((previous) => ({
+        ...previous,
+        [name]: '',
+      }))
+    }
   }
 
   async function handleSubmit(event) {
@@ -97,6 +121,34 @@ function UserEditPage() {
       formData.password !== formData.password_confirmation
     ) {
       setSaveError('The new password and confirmation do not match.')
+      return
+    }
+
+    // Validate phone numbers and email
+    const validationErrors = {}
+    
+    const emailError = getEmailErrorMessage(formData.email, true)
+    if (emailError) {
+      validationErrors.email = emailError
+    }
+    
+    if (formData.phone_number && formData.phone_number.trim()) {
+      const phoneError = getPhoneErrorMessage(formData.phone_number, false)
+      if (phoneError) {
+        validationErrors.phone_number = phoneError
+      }
+    }
+    
+    if (formData.whatsapp_number && formData.whatsapp_number.trim()) {
+      const whatsappError = getPhoneErrorMessage(formData.whatsapp_number, false)
+      if (whatsappError) {
+        validationErrors.whatsapp_number = whatsappError
+      }
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors)
+      setSaveError('Please fix validation errors before submitting.')
       return
     }
 
@@ -114,6 +166,7 @@ function UserEditPage() {
 
     setSaving(true)
     setSaveError('')
+    setFieldErrors({})
 
     try {
       await usersApi.update(id, user)
@@ -190,6 +243,11 @@ function UserEditPage() {
                 autoComplete="email"
                 required
               />
+              {fieldErrors.email && (
+                <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                  {fieldErrors.email}
+                </small>
+              )}
             </div>
 
             <div className="user-create-field">
@@ -232,7 +290,14 @@ function UserEditPage() {
                 value={formData.phone_number}
                 onChange={updateField}
                 autoComplete="tel"
+                inputMode="numeric"
+                maxLength={10}
               />
+              {fieldErrors.phone_number && (
+                <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                  {fieldErrors.phone_number}
+                </small>
+              )}
             </div>
 
             <div className="user-create-field">
@@ -243,7 +308,14 @@ function UserEditPage() {
                 type="tel"
                 value={formData.whatsapp_number}
                 onChange={updateField}
+                inputMode="numeric"
+                maxLength={10}
               />
+              {fieldErrors.whatsapp_number && (
+                <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                  {fieldErrors.whatsapp_number}
+                </small>
+              )}
             </div>
 
             <div className="user-create-field">

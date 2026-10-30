@@ -1,9 +1,24 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import AdminLayout from "../../components/layout/AdminLayout.jsx";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../app/authContext.js";
+import Footer from "../../components/layout/Footer.jsx";
 import "../../styles/pages/LoginPage.css";
+
+function LoginHeader() {
+  return (
+    <header className="login-header">
+      <Link className="login-logo" to="/" aria-label="Sharpner home">
+        <img src="/assets/images/Logo3.png" alt="Sharpner" />
+      </Link>
+      <nav className="login-nav" aria-label="Main navigation">
+        <Link to="/">Home</Link>
+        <Link to="/about">About</Link>
+        <Link to="/collaborate">Brand Deals</Link>
+      </nav>
+    </header>
+  );
+}
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -45,8 +60,9 @@ export default function LoginPage() {
   };
 
   return (
-    <AdminLayout pageClass="admin-login-dashboard">
-      <main className="dashboard-main admin-login-main">
+    <div className="admin-login-page">
+      <LoginHeader />
+      <main className="admin-login-main">
         <section className="admin-login-card">
           <div className="admin-login-heading">
             <h1>Admin Login</h1>
@@ -61,13 +77,13 @@ export default function LoginPage() {
 
           <form noValidate onSubmit={handleSubmit}>
             <div className="admin-login-form-group">
-              <label htmlFor="admin-username">Username</label>
+              <label htmlFor="admin-username">USERNAME</label>
 
               <input
                 id="admin-username"
                 type="text"
                 name="username"
-                placeholder="Enter your username"
+                placeholder="admin"
                 autoComplete="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
@@ -77,14 +93,14 @@ export default function LoginPage() {
             </div>
 
             <div className="admin-login-form-group">
-              <label htmlFor="admin-password">Password</label>
+              <label htmlFor="admin-password">PASSWORD</label>
 
               <div className="admin-login-password-wrap">
                 <input
                   id="admin-password"
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="Enter your password"
+                  placeholder="••••••••"
                   autoComplete="current-password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -134,6 +150,7 @@ export default function LoginPage() {
           </form>
         </section>
       </main>
-    </AdminLayout>
+      <Footer isHomePage={false} />
+    </div>
   );
 }

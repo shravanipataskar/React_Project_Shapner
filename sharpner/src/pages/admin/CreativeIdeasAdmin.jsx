@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { downloadCsv } from '../../utils/downloadCsv.js'
 import { downloadPdf } from '../../utils/downloadPdf.js'
 import { ideasApi } from '../../services/ideasApi.js'
 import { API_BASE_URL, apiFetch } from '../../services/apiClient.js'
+import { useAuth } from '../../app/authContext.js'
+import { hasSuperAdminAccess } from '../../utils/userTypes.js'
 
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CreativeIdeasAdmin.css'
@@ -71,10 +73,16 @@ function parseApiResponse(payload) {
 
 function CreativeIdeasAdmin() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
   const isInactivePage = pathname.endsWith('/inactive')
 
   const statusFilter = isInactivePage ? 'inactive' : 'active'
+
+  // Role-based access control - Only Super Admin can edit
+  const canEdit = hasSuperAdminAccess(user)
+  const isAdmin = !canEdit // Everyone else is view-only
 
   const [allIdeas, setAllIdeas] = useState([])
 
@@ -89,6 +97,13 @@ function CreativeIdeasAdmin() {
 
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [changingIdeaIds, setChangingIdeaIds] = useState([])
+
+  // Redirect admin users away from inactive page
+  useEffect(() => {
+    if (isAdmin && isInactivePage) {
+      navigate('/admin/ideas', { replace: true })
+    }
+  }, [isAdmin, isInactivePage, navigate])
 
   /*
    * ---------------------------------------------------------
@@ -387,20 +402,22 @@ function CreativeIdeasAdmin() {
               ✅ Active
             </Link>
 
-            {/* INACTIVE */}
+            {/* INACTIVE - Only Super Admin */}
 
-            <Link
-              className={`talent-show-button talent-show-button-inactive${
-                statusFilter === 'inactive'
-                  ? ' is-selected'
-                  : ''
-              }`}
-              to="/admin/ideas/inactive"
-            >
-              ⏸ Inactive
-            </Link>
+            {canEdit && (
+              <Link
+                className={`talent-show-button talent-show-button-inactive${
+                  statusFilter === 'inactive'
+                    ? ' is-selected'
+                    : ''
+                }`}
+                to="/admin/ideas/inactive"
+              >
+                ⏸ Inactive
+              </Link>
+            )}
 
-            {/* ADD */}
+            {/* Add New is available to both admin roles. */}
 
             {statusFilter === 'active' && (
               <Link
@@ -411,7 +428,7 @@ function CreativeIdeasAdmin() {
               </Link>
             )}
 
-            {/* CSV */}
+            {/* CSV - Both Admin and Super Admin */}
 
             {statusFilter === 'active' && (
               <button
@@ -424,7 +441,7 @@ function CreativeIdeasAdmin() {
               </button>
             )}
 
-            {/* PDF */}
+            {/* PDF - Both Admin and Super Admin */}
 
             {statusFilter === 'active' && (
               <button
@@ -615,7 +632,8 @@ function CreativeIdeasAdmin() {
                             View
                           </button>
 
-                          {!isInactivePage && (
+                          {/* Edit - Only Super Admin */}
+                          {canEdit && !isInactivePage && (
                             <Link
                               className="talent-show-button talent-show-button-edit"
                               to={`/admin/ideas/${encodeURIComponent(idea.id)}/edit`}
@@ -624,22 +642,25 @@ function CreativeIdeasAdmin() {
                             </Link>
                           )}
 
-                          <button
-                            type="button"
-                            className={`talent-show-button ${
-                              idea.active
-                                ? 'talent-show-button-deactivate'
-                                : 'talent-show-button-activate'
-                            }`}
-                            onClick={() => handleStatusChange(idea)}
-                            disabled={changingIdeaIds.includes(idea.id)}
-                          >
-                            {changingIdeaIds.includes(idea.id)
-                              ? 'Saving...'
-                              : idea.active
-                                ? 'Deactivate'
-                                : 'Activate'}
-                          </button>
+                          {/* Deactivate/Activate - Only Super Admin */}
+                          {canEdit && (
+                            <button
+                              type="button"
+                              className={`talent-show-button ${
+                                idea.active
+                                  ? 'talent-show-button-deactivate'
+                                  : 'talent-show-button-activate'
+                              }`}
+                              onClick={() => handleStatusChange(idea)}
+                              disabled={changingIdeaIds.includes(idea.id)}
+                            >
+                              {changingIdeaIds.includes(idea.id)
+                                ? 'Saving...'
+                                : idea.active
+                                  ? 'Deactivate'
+                                  : 'Activate'}
+                            </button>
+                          )}
 
                         </div>
 

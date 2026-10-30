@@ -40,8 +40,8 @@ cards: [
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const canAccessAdminFeatures = hasAdminAccess(user?.role);
-  const isSuperAdmin = hasSuperAdminAccess(user?.role);
+  const canAccessAdminFeatures = hasAdminAccess(user);
+  const isSuperAdmin = hasSuperAdminAccess(user);
 
   return (
     <AdminLayout pageClass="dashboard-page">
@@ -90,22 +90,20 @@ export default function Dashboard() {
                 🎬 Manage Videos
               </Link>
 
-              {isSuperAdmin && (
-                <>
-                  <Link
-                    to="/videos/create"
-                    className="dashboard-action dashboard-action-gray"
-                  >
-                    ➕ Add New Video
-                  </Link>
+              <Link
+                to="/videos/create"
+                className="dashboard-action dashboard-action-gray"
+              >
+                ➕ Add New Video
+              </Link>
 
-                  <Link
-                    to="/admin/videos/inactive"
-                    className="dashboard-action dashboard-action-yellow"
-                  >
-                    ▣ Inactive Content
-                  </Link>
-                </>
+              {isSuperAdmin && (
+                <Link
+                  to="/admin/videos/inactive"
+                  className="dashboard-action dashboard-action-yellow"
+                >
+                  ▣ Inactive Content
+                </Link>
               )}
             </div>
           </section>

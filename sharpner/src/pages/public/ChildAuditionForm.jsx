@@ -1,6 +1,13 @@
 
 import { useState } from "react";
 import "../../styles/pages/ChildAuditionForm.css";
+import { 
+  isValidPhoneNumber, 
+  isValidEmail, 
+  sanitizePhoneInput,
+  getPhoneErrorMessage,
+  getEmailErrorMessage
+} from "../../utils/validation";
 
 const steps = [
   "Child Info",
@@ -83,9 +90,23 @@ function ChildAuditionForm() {
   const [submitting, setSubmitting] = useState(false);
 
   const updateField = (name, value) => {
+    // Sanitize phone fields to allow only numeric input
+    let cleanedValue = value;
+    if (
+      name === 'mobile_number' || 
+      name === 'whatsapp_number' || 
+      name === 'emergency_contact'
+    ) {
+      cleanedValue = sanitizePhoneInput(value);
+      // Limit to 10 digits
+      if (cleanedValue.length > 10) {
+        cleanedValue = cleanedValue.slice(0, 10);
+      }
+    }
+
     setForm((previous) => ({
       ...previous,
-      [name]: value,
+      [name]: cleanedValue,
     }));
 
     setErrors((previous) => ({
@@ -137,20 +158,34 @@ function ChildAuditionForm() {
         nextErrors.parent_name = "Please enter the parent/guardian name.";
       }
 
-      if (!/^[0-9]{10}$/.test(form.mobile_number)) {
-        nextErrors.mobile_number = "Enter a valid 10-digit mobile number.";
+      // Validate mobile number using utility
+      const mobileError = getPhoneErrorMessage(form.mobile_number, true);
+      if (mobileError) {
+        nextErrors.mobile_number = mobileError;
       }
 
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-        nextErrors.email = "Enter a valid email address.";
+      // Validate WhatsApp number (optional field)
+      if (form.whatsapp_number.trim()) {
+        const whatsappError = getPhoneErrorMessage(form.whatsapp_number, false);
+        if (whatsappError) {
+          nextErrors.whatsapp_number = whatsappError;
+        }
+      }
+
+      // Validate email using utility
+      const emailError = getEmailErrorMessage(form.email, true);
+      if (emailError) {
+        nextErrors.email = emailError;
       }
 
       if (!form.parent_city.trim()) {
         nextErrors.parent_city = "Please enter the city.";
       }
 
-      if (!form.emergency_contact.trim()) {
-        nextErrors.emergency_contact = "Please enter an emergency contact.";
+      // Validate emergency contact using utility
+      const emergencyError = getPhoneErrorMessage(form.emergency_contact, true);
+      if (emergencyError) {
+        nextErrors.emergency_contact = emergencyError;
       }
     }
 
@@ -305,6 +340,14 @@ function ChildAuditionForm() {
         value={form[name]}
         onChange={(event) => updateField(name, event.target.value)}
         required={Boolean(options.required)}
+        inputMode={type === "tel" ? "numeric" : undefined}
+        maxLength={
+          name === "mobile_number" || 
+          name === "whatsapp_number" || 
+          name === "emergency_contact" 
+            ? 10 
+            : undefined
+        }
       />
 
       {errors[name] && (

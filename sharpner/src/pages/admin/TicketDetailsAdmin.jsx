@@ -4,6 +4,8 @@ import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { API_BASE_URL } from '../../services/apiClient.js'
 import { usersApi } from '../../services/api.js'
 import { ticketsApi } from '../../services/ticketsApi.js'
+import { useAuth } from '../../app/authContext.js'
+import { hasSuperAdminAccess } from '../../utils/userTypes.js'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/TicketDetailsAdmin.css'
 
@@ -150,6 +152,8 @@ function getFallbackTicket(id) {
 }
 
 function TicketDetailsAdmin() {
+  const { user } = useAuth()
+  const canEdit = hasSuperAdminAccess(user)
   const { id } = useParams()
   const [ticket, setTicket] = useState(null)
   const [applications, setApplications] = useState([])
@@ -264,10 +268,12 @@ function TicketDetailsAdmin() {
             <Link className="ticket-btn-back" to="/admin/tickets">
               ← Back to List
             </Link>
-            <Link className="ticket-btn-edit" to={`/admin/tickets/${ticketData.id || id || '1'}/edit`}>
-              <span className="ticket-btn-edit-icon" aria-hidden="true">✏️</span>
-              Edit Ticket
-            </Link>
+            {canEdit && (
+              <Link className="ticket-btn-edit" to={`/admin/tickets/${ticketData.id || id || '1'}/edit`}>
+                <span className="ticket-btn-edit-icon" aria-hidden="true">✏️</span>
+                Edit Ticket
+              </Link>
+            )}
           </div>
         </header>
 

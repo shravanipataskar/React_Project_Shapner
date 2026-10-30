@@ -91,7 +91,7 @@ function AdminLayout({ children, pageClass = '' }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { pathname } = useLocation()
   const { logout, user } = useAuth()
-  const navigationItems = getNavigationItemsForRole(user?.role)
+  const navigationItems = getNavigationItemsForRole(user)
 
   async function handleSignOut() {
     const confirmed = window.confirm('Are you sure you want to sign out?')

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useAuth } from "../../app/authContext.js";
 import AdminLayout from "../../components/layout/AdminLayout.jsx";
+import { hasSuperAdminAccess } from "../../utils/userTypes.js";
 import {
   getTalentVideoUrl,
   talentShowApi,
@@ -34,6 +36,8 @@ function isChecked(value) {
 
 function TalentShowView() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const canEdit = hasSuperAdminAccess(user);
   const [requestState, setRequestState] = useState({
     id: null,
     application: null,
@@ -148,14 +152,16 @@ function TalentShowView() {
                 </video>
               </div>
             )}
-            <div className="talent-show-create-actions">
-              <Link
-                className="talent-show-button talent-show-button-add"
-                to={`/admin/talent-show/${encodeURIComponent(id)}/edit`}
-              >
-                Edit Application
-              </Link>
-            </div>
+            {canEdit && (
+              <div className="talent-show-create-actions">
+                <Link
+                  className="talent-show-button talent-show-button-add"
+                  to={`/admin/talent-show/${encodeURIComponent(id)}/edit`}
+                >
+                  Edit Application
+                </Link>
+              </div>
+            )}
           </section>
         ) : null}
       </main>

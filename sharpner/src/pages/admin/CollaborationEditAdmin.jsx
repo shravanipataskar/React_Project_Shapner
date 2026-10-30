@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../components/layout/AdminLayout.jsx";
 import { collaborationsApi } from "../../services/collaborationsApi.js";
+import { 
+  isValidPhoneNumber, 
+  isValidEmail, 
+  sanitizePhoneInput,
+  getPhoneErrorMessage,
+  getEmailErrorMessage
+} from "../../utils/validation";
+import { useAuth } from "../../app/authContext.js";
+import { hasSuperAdminAccess } from "../../utils/userTypes.js";
 import "../../styles/pages/TalentShow.css";
 import "../../styles/pages/CollaborationsAdmin.css";
 import "../../styles/pages/CollaborationCreateAdmin.css";
@@ -26,10 +35,19 @@ const EMPTY_FORM = {
 function CollaborationEditAdmin() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // Redirect non-super-admin users - only super admin can edit
+  useEffect(() => {
+    if (!hasSuperAdminAccess(user)) {
+      navigate('/admin/collaborations', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     let active = true;
@@ -84,8 +102,26 @@ function CollaborationEditAdmin() {
   }, [id]);
 
   function updateField(field, value) {
-    setFormData((previous) => ({ ...previous, [field]: value }));
+    // Sanitize phone fields to allow only numeric input
+    let cleanedValue = value;
+    if (field === 'phone_number') {
+      cleanedValue = sanitizePhoneInput(value);
+      // Limit to 10 digits
+      if (cleanedValue.length > 10) {
+        cleanedValue = cleanedValue.slice(0, 10);
+      }
+    }
+    
+    setFormData((previous) => ({ ...previous, [field]: cleanedValue }));
     setError("");
+    
+    // Clear field error when user edits
+    if (fieldErrors[field]) {
+      setFieldErrors((previous) => ({
+        ...previous,
+        [field]: "",
+      }));
+    }
   }
 
   async function handleSubmit(event) {
@@ -99,8 +135,30 @@ function CollaborationEditAdmin() {
       return;
     }
 
+    // Validate phone and email
+    const validationErrors = {};
+    
+    const emailError = getEmailErrorMessage(formData.email, true);
+    if (emailError) {
+      validationErrors.email = emailError;
+    }
+    
+    if (formData.phone_number && formData.phone_number.trim()) {
+      const phoneError = getPhoneErrorMessage(formData.phone_number, false);
+      if (phoneError) {
+        validationErrors.phone_number = phoneError;
+      }
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      setError("Please fix validation errors before submitting.");
+      return;
+    }
+
     setSaving(true);
     setError("");
+    setFieldErrors({});
     try {
       await collaborationsApi.update(id, {
         ...formData,
@@ -127,6 +185,8 @@ function CollaborationEditAdmin() {
   }
 
   function renderInput(label, name, type = "text", required = false) {
+    const isPhone = name === 'phone_number';
+    
     return (
       <label className="collaboration-create-field" key={name}>
         <span>{label}{required ? " *" : ""}</span>
@@ -136,7 +196,14 @@ function CollaborationEditAdmin() {
           value={formData[name]}
           onChange={(event) => updateField(name, event.target.value)}
           required={required}
+          inputMode={isPhone ? "numeric" : undefined}
+          maxLength={isPhone ? 10 : undefined}
         />
+        {fieldErrors[name] && (
+          <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+            {fieldErrors[name]}
+          </small>
+        )}
       </label>
     );
   }

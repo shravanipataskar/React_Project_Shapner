@@ -2,6 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { collaborationsApi } from '../../services/collaborationsApi.js'
+import { 
+  isValidPhoneNumber, 
+  isValidEmail, 
+  sanitizePhoneInput,
+  getPhoneErrorMessage,
+  getEmailErrorMessage
+} from '../../utils/validation'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CollaborationsAdmin.css'
 import '../../styles/pages/CollaborationCreateAdmin.css'
@@ -10,31 +17,78 @@ function CollaborationCreateAdmin() {
   const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [formData, setFormData] = useState({
+    phoneNumber: '',
+    email: '',
+  })
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target
+    
+    let cleanedValue = value
+    if (name === 'phoneNumber') {
+      cleanedValue = sanitizePhoneInput(value)
+      if (cleanedValue.length > 10) {
+        cleanedValue = cleanedValue.slice(0, 10)
+      }
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: cleanedValue }))
+    
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }))
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
-    const formData = new FormData(event.currentTarget)
+    const formDataObj = new FormData(event.currentTarget)
+
+    // Validate phone and email
+    const validationErrors = {}
+    
+    const emailValue = String(formDataObj.get('email') ?? '').trim()
+    const emailError = getEmailErrorMessage(emailValue, true)
+    if (emailError) {
+      validationErrors.email = emailError
+    }
+    
+    const phoneValue = String(formDataObj.get('phoneNumber') ?? '').trim()
+    if (phoneValue) {
+      const phoneError = getPhoneErrorMessage(phoneValue, false)
+      if (phoneError) {
+        validationErrors.phoneNumber = phoneError
+      }
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors)
+      setError('Please fix validation errors before submitting.')
+      return
+    }
 
     setSaving(true)
     setError('')
+    setFieldErrors({})
     try {
       await collaborationsApi.createAdmin({
-        name: String(formData.get('name') ?? '').trim() || null,
+        name: String(formDataObj.get('name') ?? '').trim() || null,
         organization_name:
-          String(formData.get('organizationName') ?? '').trim() || null,
-        brand_name: String(formData.get('brandName') ?? '').trim(),
-        contact_person: String(formData.get('contactPerson') ?? '').trim(),
+          String(formDataObj.get('organizationName') ?? '').trim() || null,
+        brand_name: String(formDataObj.get('brandName') ?? '').trim(),
+        contact_person: String(formDataObj.get('contactPerson') ?? '').trim(),
         collaboration_type: 'brand',
-        email: String(formData.get('email') ?? '').trim(),
-        phone_number: String(formData.get('phoneNumber') ?? '').trim() || null,
+        email: emailValue,
+        phone_number: phoneValue || null,
         instagram_or_website:
-          String(formData.get('website') ?? '').trim() || null,
-        type_of_promotion: String(formData.get('promotionType') ?? ''),
-        budget_range: String(formData.get('budgetRange') ?? ''),
-        campaign_goal: String(formData.get('campaignGoal') ?? '').trim(),
-        message: String(formData.get('additionalMessage') ?? '').trim(),
-        commercial_inquiry: formData.has('commercialInquiry'),
-        review_status: Number(formData.get('reviewStatus')),
+          String(formDataObj.get('website') ?? '').trim() || null,
+        type_of_promotion: String(formDataObj.get('promotionType') ?? ''),
+        budget_range: String(formDataObj.get('budgetRange') ?? ''),
+        campaign_goal: String(formDataObj.get('campaignGoal') ?? '').trim(),
+        message: String(formDataObj.get('additionalMessage') ?? '').trim(),
+        commercial_inquiry: formDataObj.has('commercialInquiry'),
+        review_status: Number(formDataObj.get('reviewStatus')),
       })
       window.alert('Brand Deal saved successfully.')
       navigate('/admin/collaborations')
@@ -116,12 +170,35 @@ function CollaborationCreateAdmin() {
 
                 <label className="collaboration-create-field">
                   <span>Email *</span>
-                  <input name="email" type="email" required />
+                  <input 
+                    name="email" 
+                    type="email" 
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required 
+                  />
+                  {fieldErrors.email && (
+                    <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                      {fieldErrors.email}
+                    </small>
+                  )}
                 </label>
 
                 <label className="collaboration-create-field">
                   <span>Phone Number</span>
-                  <input name="phoneNumber" type="tel" />
+                  <input 
+                    name="phoneNumber" 
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    inputMode="numeric"
+                    maxLength={10}
+                  />
+                  {fieldErrors.phoneNumber && (
+                    <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                      {fieldErrors.phoneNumber}
+                    </small>
+                  )}
                 </label>
 
                 <label className="collaboration-create-field is-full-width">

@@ -3,16 +3,23 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { ticketsApi } from '../../services/ticketsApi.js'
 import { API_BASE_URL, apiFetch } from '../../services/apiClient.js'
+import { useAuth } from '../../app/authContext.js'
+import { hasSuperAdminAccess } from '../../utils/userTypes.js'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/TicketsAdmin.css'
 
 function TicketsAdmin() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const statusFilter = pathname.endsWith('/inactive')
     ? 'inactive'
     : 'active'
+
+  // Role-based access control - Only Super Admin can edit
+  const canEdit = hasSuperAdminAccess(user)
+  const isAdmin = !canEdit // Everyone else is view-only
 
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
@@ -22,6 +29,13 @@ function TicketsAdmin() {
   const [search, setSearch] = useState('')
   const [moduleFilter, setModuleFilter] = useState('')
   const [overallStatusFilter, setOverallStatusFilter] = useState('')
+
+  // Redirect admin users away from inactive page
+  useEffect(() => {
+    if (isAdmin && statusFilter === 'inactive') {
+      navigate('/admin/tickets', { replace: true })
+    }
+  }, [isAdmin, statusFilter, navigate])
 
   // ---------------------------------------------------------
   // FETCH TICKETS FROM LARAVEL
@@ -273,21 +287,24 @@ function TicketsAdmin() {
               ✅ Active
             </Link>
 
-            <Link
-              className={`talent-show-button talent-show-button-inactive${
-                statusFilter === 'inactive'
-                  ? ' is-selected'
-                  : ''
-              }`}
-              to="/admin/tickets/inactive"
-              aria-current={
-                statusFilter === 'inactive'
-                  ? 'page'
-                  : undefined
-              }
-            >
-              ⏸ Inactive
-            </Link>
+            {/* Inactive tab - Only Super Admin */}
+            {canEdit && (
+              <Link
+                className={`talent-show-button talent-show-button-inactive${
+                  statusFilter === 'inactive'
+                    ? ' is-selected'
+                    : ''
+                }`}
+                to="/admin/tickets/inactive"
+                aria-current={
+                  statusFilter === 'inactive'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                ⏸ Inactive
+              </Link>
+            )}
 
             {statusFilter === 'active' && (
               <Link
@@ -541,32 +558,38 @@ function TicketsAdmin() {
                             View
                           </button>
 
-                          <button
-                            type="button"
-                            className="talent-show-button talent-show-button-edit"
-                            onClick={() =>
-                              navigate(`/admin/tickets/${ticket.id}/edit`)
-                            }
-                          >
-                            Edit
-                          </button>
+                          {/* Edit - Only Super Admin */}
+                          {canEdit && (
+                            <button
+                              type="button"
+                              className="talent-show-button talent-show-button-edit"
+                              onClick={() =>
+                                navigate(`/admin/tickets/${ticket.id}/edit`)
+                              }
+                            >
+                              Edit
+                            </button>
+                          )}
 
-                          {statusFilter === 'active' ? (
-                            <button
-                              type="button"
-                              className="talent-show-button talent-show-button-deactivate"
-                              onClick={() => handleToggleStatus(ticket, false)}
-                            >
-                              Deactivate
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="talent-show-button talent-show-button-activate"
-                              onClick={() => handleToggleStatus(ticket, true)}
-                            >
-                              Activate
-                            </button>
+                          {/* Deactivate/Activate - Only Super Admin */}
+                          {canEdit && (
+                            statusFilter === 'active' ? (
+                              <button
+                                type="button"
+                                className="talent-show-button talent-show-button-deactivate"
+                                onClick={() => handleToggleStatus(ticket, false)}
+                              >
+                                Deactivate
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="talent-show-button talent-show-button-activate"
+                                onClick={() => handleToggleStatus(ticket, true)}
+                              >
+                                Activate
+                              </button>
+                            )
                           )}
 
                         </div>

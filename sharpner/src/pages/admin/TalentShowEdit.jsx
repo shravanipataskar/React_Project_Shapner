@@ -5,6 +5,7 @@ import {
   getTalentVideoUrl,
   talentShowApi,
 } from "../../services/talentShowApi.js";
+import { useAuth } from "../../app/authContext.js";
 import "../../styles/pages/TalentShow.css";
 import "../../styles/pages/TalentShowCreate.css";
 
@@ -93,6 +94,7 @@ function mapApplication(application) {
 function TalentShowEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [requestState, setRequestState] = useState({
     id: null,
     loading: true,
@@ -103,6 +105,13 @@ function TalentShowEdit() {
   const [videoFile, setVideoFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+
+  // Redirect admin users (user_type "11" or 11) - only super admin can edit
+  useEffect(() => {
+    if (user?.user_type === "11" || user?.user_type === 11) {
+      navigate('/admin/talent-show', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const controller = new AbortController();

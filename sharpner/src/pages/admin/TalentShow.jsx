@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout.jsx';
 import { talentShowApi } from '../../services/talentShowApi.js';
 import { downloadCsv } from '../../utils/downloadCsv.js';
 import { downloadPdf } from '../../utils/downloadPdf.js';
+import { useAuth } from '../../app/authContext.js';
+import { hasSuperAdminAccess } from '../../utils/userTypes.js';
 import '../../styles/pages/TalentShow.css';
 
 const applicationFields = [
@@ -88,10 +90,16 @@ function getApplicationList(payload) {
 
 export default function TalentShow() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const statusFilter = pathname.endsWith('/inactive')
     ? 'inactive'
     : 'active';
+
+  // Role-based access control - Only Super Admin can edit
+  const canEdit = hasSuperAdminAccess(user);
+  const isAdmin = !canEdit; // Everyone else is view-only
 
   const [applications, setApplications] = useState([]);
   const [search, setSearch] = useState('');
@@ -104,6 +112,13 @@ export default function TalentShow() {
   const [total, setTotal] = useState(0);
   const [changingApplicationId, setChangingApplicationId] = useState(null);
   const [actionError, setActionError] = useState('');
+
+  // Redirect admin users away from inactive page
+  useEffect(() => {
+    if (isAdmin && statusFilter === 'inactive') {
+      navigate('/admin/talent-show', { replace: true });
+    }
+  }, [isAdmin, statusFilter, navigate]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -278,18 +293,22 @@ export default function TalentShow() {
               ✅ Active
             </Link>
 
-            <Link
-              className={`talent-show-button talent-show-button-inactive${
-                statusFilter === 'inactive' ? ' is-selected' : ''
-              }`}
-              to="/admin/talent-show/inactive"
-              aria-current={
-                statusFilter === 'inactive' ? 'page' : undefined
-              }
-            >
-              ⏸️ Inactive
-            </Link>
+            {/* Only Super Admin can see Inactive tab */}
+            {canEdit && (
+              <Link
+                className={`talent-show-button talent-show-button-inactive${
+                  statusFilter === 'inactive' ? ' is-selected' : ''
+                }`}
+                to="/admin/talent-show/inactive"
+                aria-current={
+                  statusFilter === 'inactive' ? 'page' : undefined
+                }
+              >
+                ⏸️ Inactive
+              </Link>
+            )}
 
+            {/* Add New is available to both admin roles. */}
             {statusFilter === 'active' && (
               <Link
                 className="talent-show-button talent-show-button-add"
@@ -299,26 +318,27 @@ export default function TalentShow() {
               </Link>
             )}
 
+            {/* Export buttons available for both Admin and Super Admin */}
             {statusFilter === 'active' && (
-              <button
-                type="button"
-                className="talent-show-button talent-show-button-excel"
-                onClick={handleExportExcel}
-                disabled={loading || Boolean(error)}
-              >
-                📊 Export Excel
-              </button>
-            )}
+              <>
+                <button
+                  type="button"
+                  className="talent-show-button talent-show-button-excel"
+                  onClick={handleExportExcel}
+                  disabled={loading || Boolean(error)}
+                >
+                  📊 Export Excel
+                </button>
 
-            {statusFilter === 'active' && (
-              <button
-                type="button"
-                className="talent-show-button talent-show-button-pdf"
-                onClick={handleExportPdf}
-                disabled={loading || Boolean(error)}
-              >
-                📄 Export PDF
-              </button>
+                <button
+                  type="button"
+                  className="talent-show-button talent-show-button-pdf"
+                  onClick={handleExportPdf}
+                  disabled={loading || Boolean(error)}
+                >
+                  📄 Export PDF
+                </button>
+              </>
             )}
           </div>
         </header>
@@ -423,7 +443,8 @@ export default function TalentShow() {
                             View
                           </Link>
 
-                          {application.active && (
+                          {/* Only Super Admin can edit and deactivate */}
+                          {canEdit && application.active && (
                             <Link
                               className="talent-show-button talent-show-button-edit"
                               to={`/admin/talent-show/${encodeURIComponent(application.id)}/edit`}
@@ -432,24 +453,26 @@ export default function TalentShow() {
                             </Link>
                           )}
 
-                          <button
-                            type="button"
-                            className={`talent-show-button ${
-                              application.active
-                                ? 'talent-show-button-deactivate'
-                                : 'talent-show-button-activate'
-                            }`}
-                            disabled={changingApplicationId === application.id}
-                            onClick={() =>
-                              handleStatusChange(application, application.active ? 0 : 1)
-                            }
-                          >
-                            {changingApplicationId === application.id
-                              ? 'Updating...'
-                              : application.active
-                                ? 'Deactivate'
-                                : 'Activate'}
-                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              className={`talent-show-button ${
+                                application.active
+                                  ? 'talent-show-button-deactivate'
+                                  : 'talent-show-button-activate'
+                              }`}
+                              disabled={changingApplicationId === application.id}
+                              onClick={() =>
+                                handleStatusChange(application, application.active ? 0 : 1)
+                              }
+                            >
+                              {changingApplicationId === application.id
+                                ? 'Updating...'
+                                : application.active
+                                  ? 'Deactivate'
+                                  : 'Activate'}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

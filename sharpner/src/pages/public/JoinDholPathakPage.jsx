@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import '../../styles/pages/JoinDholPathakPage.css'
+import { 
+  sanitizePhoneInput,
+  getPhoneErrorMessage
+} from '../../utils/validation'
 
 const steps = ['Age Group', 'Form Details', 'Medical & Safety', 'Declaration']
 const practiceDays = [
@@ -46,7 +50,17 @@ function JoinDholPathakPage() {
   const [showSuccess, setShowSuccess] = useState(false)
 
   const updateField = (name, value) => {
-    setForm((previous) => ({ ...previous, [name]: value }))
+    // Sanitize phone fields to allow only numeric input
+    let cleanedValue = value;
+    if (name === 'mobile_number' || name === 'emergency_contact') {
+      cleanedValue = sanitizePhoneInput(value);
+      // Limit to 10 digits
+      if (cleanedValue.length > 10) {
+        cleanedValue = cleanedValue.slice(0, 10);
+      }
+    }
+
+    setForm((previous) => ({ ...previous, [name]: cleanedValue }))
     setErrors((previous) => ({ ...previous, [name]: '' }))
   }
 
@@ -70,9 +84,13 @@ function JoinDholPathakPage() {
     if (currentStep === 1) {
       if (!form.full_name.trim()) nextErrors.full_name = 'Please enter the participant name.'
       if (!form.parent_name.trim()) nextErrors.parent_name = 'Please enter the parent/guardian name.'
-      if (!/^[0-9]{10}$/.test(form.mobile_number)) {
-        nextErrors.mobile_number = 'Enter a valid 10-digit mobile number.'
+      
+      // Validate mobile number using utility
+      const mobileError = getPhoneErrorMessage(form.mobile_number, true);
+      if (mobileError) {
+        nextErrors.mobile_number = mobileError;
       }
+
       if (!form.city.trim()) nextErrors.city = 'Please enter your city.'
       if (!form.address.trim()) nextErrors.address = 'Please enter your address.'
       if (!form.school_name.trim()) nextErrors.school_name = 'Please enter your school/college name.'
@@ -86,8 +104,10 @@ function JoinDholPathakPage() {
       if (!form.medical_conditions.trim()) {
         nextErrors.medical_conditions = 'Enter medical conditions or write “None”.'
       }
-      if (!/^[0-9]{10}$/.test(form.emergency_contact)) {
-        nextErrors.emergency_contact = 'Enter a valid 10-digit emergency contact.'
+      // Validate emergency contact using utility
+      const emergencyError = getPhoneErrorMessage(form.emergency_contact, true);
+      if (emergencyError) {
+        nextErrors.emergency_contact = emergencyError;
       }
       if (!form.weekly_availability) {
         nextErrors.weekly_availability = 'Please select your weekly availability.'
@@ -149,6 +169,12 @@ function JoinDholPathakPage() {
         value={form[name]}
         onChange={(event) => updateField(name, event.target.value)}
         autoComplete={options.autoComplete}
+        inputMode={type === 'tel' ? 'numeric' : undefined}
+        maxLength={
+          name === 'mobile_number' || name === 'emergency_contact' 
+            ? 10 
+            : undefined
+        }
       />
       {renderError(name)}
     </div>

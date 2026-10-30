@@ -2,26 +2,58 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { ideasApi } from '../../services/ideasApi.js'
+import { 
+  isValidEmail, 
+  getEmailErrorMessage
+} from '../../utils/validation'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CreativeIdeasAdmin.css'
 import '../../styles/pages/CreativeIdeaCreateAdmin.css'
 
 function CreativeIdeaCreateAdmin() {
+  const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [email, setEmail] = useState('')
+
+  const handleEmailChange = (event) => {
+    setEmail(event.target.value)
+    if (fieldErrors.email) {
+      setFieldErrors((prev) => ({ ...prev, email: '' }))
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     const permission = formData.get('permission')
+    const emailValue = String(formData.get('email') ?? '').trim()
+
+    // Validate email if provided (optional field)
+    const validationErrors = {}
+    
+    if (emailValue) {
+      const emailError = getEmailErrorMessage(emailValue, false)
+      if (emailError) {
+        validationErrors.email = emailError
+      }
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors)
+      setError('Please fix validation errors before submitting.')
+      return
+    }
 
     setSaving(true)
     setError('')
+    setFieldErrors({})
     try {
       await ideasApi.createIdea({
         name: String(formData.get('name') ?? '').trim(),
         instagram: String(formData.get('instagramUsername') ?? '').trim() || null,
-        email: String(formData.get('email') ?? '').trim() || null,
+        email: emailValue || null,
         reel_idea: String(formData.get('creativeIdea') ?? '').trim(),
         hook_line: String(formData.get('suggestedHook') ?? '').trim(),
         viral_reason: String(formData.get('whyItWillWork') ?? '').trim(),
@@ -36,8 +68,6 @@ function CreativeIdeaCreateAdmin() {
       setSaving(false)
     }
   }
-
-  const navigate = useNavigate()
 
   return (
     <AdminLayout pageClass="creative-ideas-admin">
@@ -85,7 +115,17 @@ function CreativeIdeaCreateAdmin() {
 
             <label className="creative-idea-create-field">
               <span>Email</span>
-              <input name="email" type="email" />
+              <input 
+                name="email" 
+                type="email"
+                value={email}
+                onChange={handleEmailChange}
+              />
+              {fieldErrors.email && (
+                <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                  {fieldErrors.email}
+                </small>
+              )}
             </label>
 
             <label className="creative-idea-create-field">

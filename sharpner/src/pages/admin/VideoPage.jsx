@@ -8,19 +8,32 @@ import {
   getNavigationItemsForRole,
   isAdminNavigationItemActive,
 } from "../../components/layout/adminNavigation.js";
+import { hasSuperAdminAccess } from "../../utils/userTypes.js";
 import "../../styles/pages/VideosPage.css";
 
 export default function VideosPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const navigationItems = getNavigationItemsForRole(user?.role);
+  
+  const navigationItems = getNavigationItemsForRole(user);
+
+  // Only Super Admin can edit
+  const canEdit = hasSuperAdminAccess(user);
+  const isAdmin = !canEdit; // Everyone else is view-only
 
   const [searchInput, setSearchInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const statusFilter = location.pathname.endsWith("/inactive")
     ? "Inactive"
     : "Active";
+
+  // Redirect admin users away from inactive page
+  useEffect(() => {
+    if (isAdmin && statusFilter === "Inactive") {
+      navigate("/admin/videos", { replace: true });
+    }
+  }, [isAdmin, statusFilter, navigate]);
 
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -258,20 +271,26 @@ export default function VideosPage() {
               ☑ Active
             </Link>
 
-            <Link
-              to="/admin/videos/inactive"
-              className={`videos-status-button videos-inactive-button ${
-                statusFilter === "Inactive" ? "status-inactive" : ""
-              }`}
-              aria-current={statusFilter === "Inactive" ? "page" : undefined}
-            >
-              ⏸ Inactive
-            </Link>
+            {/* Only Super Admin can see Inactive tab */}
+            {canEdit && (
+              <Link
+                to="/admin/videos/inactive"
+                className={`videos-status-button videos-inactive-button ${
+                  statusFilter === "Inactive" ? "status-inactive" : ""
+                }`}
+                aria-current={statusFilter === "Inactive" ? "page" : undefined}
+              >
+                ⏸ Inactive
+              </Link>
+            )}
 
-            <Link to="/videos/create" className="videos-add-new-link">
-              <span>＋</span>
-              Add New
-            </Link>
+            {/* Add New is available to both admin roles. */}
+            {(canEdit || statusFilter === "Active") && (
+              <Link to="/videos/create" className="videos-add-new-link">
+                <span>＋</span>
+                Add New
+              </Link>
+            )}
           </div>
         </header>
 
@@ -432,7 +451,9 @@ export default function VideosPage() {
                           ) : (
                             <span>—</span>
                           )}
-                          {statusFilter === "Active" && (
+                          
+                          {/* Only Super Admin can edit */}
+                          {canEdit && statusFilter === "Active" && (
                             <button
                               type="button"
                               className="videos-edit-button"
@@ -442,22 +463,26 @@ export default function VideosPage() {
                               Edit
                             </button>
                           )}
-                          <button
-                            type="button"
-                            className={
-                              statusFilter === "Inactive"
-                                ? "videos-activate-button"
-                                : "videos-deactivate-button"
-                            }
-                            onClick={() => updateVideoStatus(video)}
-                            disabled={updatingVideoId === video.id}
-                          >
-                            {updatingVideoId === video.id
-                              ? "Saving..."
-                              : statusFilter === "Active"
-                                ? "Deactivate"
-                                : "Activate"}
-                          </button>
+                          
+                          {/* Only Super Admin can activate/deactivate */}
+                          {canEdit && (
+                            <button
+                              type="button"
+                              className={
+                                statusFilter === "Inactive"
+                                  ? "videos-activate-button"
+                                  : "videos-deactivate-button"
+                              }
+                              onClick={() => updateVideoStatus(video)}
+                              disabled={updatingVideoId === video.id}
+                            >
+                              {updatingVideoId === video.id
+                                ? "Saving..."
+                                : statusFilter === "Active"
+                                  ? "Deactivate"
+                                  : "Activate"}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

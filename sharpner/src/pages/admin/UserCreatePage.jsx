@@ -3,6 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { usersApi } from '../../services/api.js'
 import { getUserTypeLabel } from '../../utils/userTypes.js'
+import { 
+  sanitizePhoneInput,
+  getPhoneErrorMessage,
+  getEmailErrorMessage
+} from '../../utils/validation'
 import '../../styles/pages/UserCreatePage.css'
 
 const userFields = [
@@ -56,6 +61,7 @@ function UserCreatePage() {
   const [loadingTypes, setLoadingTypes] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   useEffect(() => {
     let active = true
@@ -87,8 +93,26 @@ function UserCreatePage() {
 
   function updateField(event) {
     const { name, value } = event.target
-    setFormData((previous) => ({ ...previous, [name]: value }))
+    
+    // Sanitize phone fields to allow only numeric input
+    let cleanedValue = value
+    if (name === 'phone_number' || name === 'whatsapp_number') {
+      cleanedValue = sanitizePhoneInput(value)
+      if (cleanedValue.length > 10) {
+        cleanedValue = cleanedValue.slice(0, 10)
+      }
+    }
+    
+    setFormData((previous) => ({ ...previous, [name]: cleanedValue }))
     setError('')
+    
+    // Clear field error when user edits
+    if (fieldErrors[name]) {
+      setFieldErrors((previous) => ({
+        ...previous,
+        [name]: '',
+      }))
+    }
   }
 
   async function handleSubmit(event) {
@@ -104,8 +128,37 @@ function UserCreatePage() {
       return
     }
 
+    // Validate phone numbers and email
+    const validationErrors = {}
+    
+    const emailError = getEmailErrorMessage(formData.email, true)
+    if (emailError) {
+      validationErrors.email = emailError
+    }
+    
+    if (formData.phone_number && formData.phone_number.trim()) {
+      const phoneError = getPhoneErrorMessage(formData.phone_number, false)
+      if (phoneError) {
+        validationErrors.phone_number = phoneError
+      }
+    }
+    
+    if (formData.whatsapp_number && formData.whatsapp_number.trim()) {
+      const whatsappError = getPhoneErrorMessage(formData.whatsapp_number, false)
+      if (whatsappError) {
+        validationErrors.whatsapp_number = whatsappError
+      }
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors)
+      setError('Please fix validation errors before submitting.')
+      return
+    }
+
     setSaving(true)
     setError('')
+    setFieldErrors({})
     try {
       await usersApi.create({
         name: formData.name.trim(),
@@ -143,20 +196,32 @@ function UserCreatePage() {
               {error}
             </p>
           )}
-          {userFields.map(({ id, name, label, type = 'text', placeholder, required }) => (
-            <div className="user-create-field" key={id}>
-              <label htmlFor={id}>{label}</label>
-              <input
-                id={id}
-                name={name ?? id}
-                type={type}
-                placeholder={placeholder}
-                value={formData[name ?? id]}
-                onChange={updateField}
-                required={required}
-              />
-            </div>
-          ))}
+          {userFields.map(({ id, name, label, type = 'text', placeholder, required }) => {
+            const fieldName = name ?? id
+            const isPhone = fieldName === 'phone_number' || fieldName === 'whatsapp_number'
+            
+            return (
+              <div className="user-create-field" key={id}>
+                <label htmlFor={id}>{label}</label>
+                <input
+                  id={id}
+                  name={fieldName}
+                  type={type}
+                  placeholder={placeholder}
+                  value={formData[fieldName]}
+                  onChange={updateField}
+                  required={required}
+                  inputMode={isPhone ? 'numeric' : undefined}
+                  maxLength={isPhone ? 10 : undefined}
+                />
+                {fieldErrors[fieldName] && (
+                  <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                    {fieldErrors[fieldName]}
+                  </small>
+                )}
+              </div>
+            )
+          })}
 
           <div className="user-create-field">
             <label htmlFor="user-type">User Type</label>

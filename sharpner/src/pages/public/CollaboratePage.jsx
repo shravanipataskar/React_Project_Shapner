@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isValidEmail, getEmailErrorMessage, sanitizeEmailInput } from '../../utils/validation'
 
 const stepFields = {
   1: ['brand_name', 'contact_person', 'email'],
@@ -58,11 +59,9 @@ function CollaboratePage() {
       return validationMessages[name]
     }
 
-    if (
-      name === 'email' &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-    ) {
-      return validationMessages[name]
+    if (name === 'email') {
+      const emailError = getEmailErrorMessage(value, true);
+      return emailError || '';
     }
 
     return ''

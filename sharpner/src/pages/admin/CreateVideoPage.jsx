@@ -14,7 +14,7 @@ export default function CreateVideoPage() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { logout, user } = useAuth();
-  const navigationItems = getNavigationItemsForRole(user?.role);
+  const navigationItems = getNavigationItemsForRole(user);
 
   const [formData, setFormData] = useState({
     videoUrl: "",

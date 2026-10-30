@@ -1,22 +1,38 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminLayout from "../../components/layout/AdminLayout.jsx";
 import { downloadCsv } from "../../utils/downloadCsv.js";
 import { downloadPdf } from "../../utils/downloadPdf.js";
 import { collaborationsApi } from "../../services/collaborationsApi.js";
+import { useAuth } from "../../app/authContext.js";
+import { hasSuperAdminAccess } from "../../utils/userTypes.js";
 import "../../styles/pages/TalentShow.css";
 import "../../styles/pages/CollaborationsAdmin.css";
 
 const CollaborationsAdmin = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const isInactivePage = pathname.endsWith("/inactive");
   const activeFilter = isInactivePage ? "inactive" : "active";
+  
+  // Role-based access control - Only Super Admin can edit
+  const canEdit = hasSuperAdminAccess(user);
+  const isAdmin = !canEdit; // Everyone else is view-only
+  
   const [collaborations, setCollaborations] = useState([]);
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [changingIds, setChangingIds] = useState([]);
+
+  // Redirect admin users away from inactive page
+  useEffect(() => {
+    if (isAdmin && isInactivePage) {
+      navigate('/admin/collaborations', { replace: true });
+    }
+  }, [isAdmin, isInactivePage, navigate]);
 
   // ----------------------------------------------------
   // FETCH COLLABORATIONS
@@ -226,15 +242,19 @@ const CollaborationsAdmin = () => {
               ✅ Active
             </Link>
 
-            <Link
-              className={`talent-show-button talent-show-button-inactive${
-                activeFilter === "inactive" ? " is-selected" : ""
-              }`}
-              to="/admin/collaborations/inactive"
-            >
-              ⏸ Inactive
-            </Link>
+            {/* Inactive tab - Only Super Admin */}
+            {canEdit && (
+              <Link
+                className={`talent-show-button talent-show-button-inactive${
+                  activeFilter === "inactive" ? " is-selected" : ""
+                }`}
+                to="/admin/collaborations/inactive"
+              >
+                ⏸ Inactive
+              </Link>
+            )}
 
+            {/* Add New is available to both admin roles. */}
             {!isInactivePage && (
               <Link
                 className="talent-show-button talent-show-button-add"
@@ -244,6 +264,7 @@ const CollaborationsAdmin = () => {
               </Link>
             )}
 
+            {/* Export buttons - Both Admin and Super Admin */}
             {!isInactivePage && (
               <>
                 <button
@@ -366,7 +387,8 @@ const CollaborationsAdmin = () => {
                             >
                               View
                             </Link>
-                            {!isInactivePage && (
+                            {/* Edit - Only Super Admin */}
+                            {canEdit && !isInactivePage && (
                               <Link
                                 className="talent-show-button talent-show-button-edit"
                                 to={`/admin/collaborations/${encodeURIComponent(item.id)}/edit`}
@@ -374,22 +396,25 @@ const CollaborationsAdmin = () => {
                                 Edit
                               </Link>
                             )}
-                            <button
-                              type="button"
-                              className={`talent-show-button ${
-                                isInactivePage
-                                  ? "talent-show-button-activate"
-                                  : "talent-show-button-deactivate"
-                              }`}
-                              onClick={() => handleStatusChange(item)}
-                              disabled={changingIds.includes(item.id)}
-                            >
-                              {changingIds.includes(item.id)
-                                ? "Saving..."
-                                : isInactivePage
-                                  ? "Activate"
-                                  : "Deactivate"}
-                            </button>
+                            {/* Deactivate/Activate - Only Super Admin */}
+                            {canEdit && (
+                              <button
+                                type="button"
+                                className={`talent-show-button ${
+                                  isInactivePage
+                                    ? "talent-show-button-activate"
+                                    : "talent-show-button-deactivate"
+                                }`}
+                                onClick={() => handleStatusChange(item)}
+                                disabled={changingIds.includes(item.id)}
+                              >
+                                {changingIds.includes(item.id)
+                                  ? "Saving..."
+                                  : isInactivePage
+                                    ? "Activate"
+                                    : "Deactivate"}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

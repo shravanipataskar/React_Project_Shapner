@@ -3,11 +3,28 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../../styles/pages/AuditionsPage.css";
 import { auditionsApi } from "../../services/auditionsApi";
 import AuditionsSidebar from "../../components/admin/AuditionsSidebar.jsx";
+import { useAuth } from "../../app/authContext.js";
+import { hasSuperAdminAccess } from "../../utils/userTypes.js";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default function AuditionsPage() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const status = pathname.endsWith("/inactive") ? "Inactive" : "Active";
+
+  // Only Super Admin can edit
+  const canEdit = hasSuperAdminAccess(user);
+  const isAdmin = !canEdit; // Everyone else is view-only
+
+  // Redirect admin users away from inactive page
+  useEffect(() => {
+    if (isAdmin && status === "Inactive") {
+      navigate("/admin/auditions", { replace: true });
+    }
+  }, [isAdmin, status, navigate]);
 
   // Search and filter states
   const [search, setSearch] = useState("");
@@ -136,62 +153,168 @@ export default function AuditionsPage() {
     }
   };
 
-  // Download the current API response as CSV.
-  // This is a simple frontend export, not a formatted Excel file.
+  // Export auditions data to Excel format
   const handleExportExcel = () => {
     if (auditions.length === 0) {
-      window.alert("There are no audition records to export on this page.");
+      window.alert("There are no audition records to export.");
       return;
     }
 
-    const headers = [
-      "ID",
-      "Name",
-      "Mobile Number",
-      "Age",
-      "City",
-      "Application Status",
-    ];
+    try {
+      // Prepare data for Excel export
+      const exportData = auditions.map((audition, index) => ({
+        'S.No': index + 1,
+        'ID': audition.id || '',
+        'Full Name': audition.full_name || '',
+        'Mobile Number': audition.mobile_number || '',
+        'WhatsApp Number': audition.whatsapp_number || '',
+        'Email': audition.email || '',
+        'Age': audition.age ?? '',
+        'Gender': audition.gender || '',
+        'City': audition.city || '',
+        'Address': audition.address || '',
+        'Emergency Contact': audition.emergency_contact || '',
+        'Emergency Contact Name': audition.emergency_contact_name || '',
+        'Previous Experience': audition.previous_experience || '',
+        'Talent Description': audition.talent_description || '',
+        'Application Status': audition.application_status || '',
+        'Status': status,
+      }));
 
-    const escapeCsv = (value) =>
-      `"${String(value ?? "").replace(/"/g, '""')}"`;
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
 
-    const rows = auditions.map((audition) => [
-      audition.id,
-      audition.full_name,
-      audition.mobile_number,
-      audition.age,
-      audition.city,
-      audition.application_status,
-    ]);
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 6 },  // S.No
+        { wch: 8 },  // ID
+        { wch: 20 }, // Full Name
+        { wch: 15 }, // Mobile Number
+        { wch: 15 }, // WhatsApp Number
+        { wch: 25 }, // Email
+        { wch: 6 },  // Age
+        { wch: 10 }, // Gender
+        { wch: 15 }, // City
+        { wch: 30 }, // Address
+        { wch: 15 }, // Emergency Contact
+        { wch: 20 }, // Emergency Contact Name
+        { wch: 20 }, // Previous Experience
+        { wch: 30 }, // Talent Description
+        { wch: 20 }, // Application Status
+        { wch: 10 }, // Status
+      ];
+      worksheet['!cols'] = columnWidths;
 
-    const csv = [
-      headers.map(escapeCsv).join(","),
-      ...rows.map((row) => row.map(escapeCsv).join(",")),
-    ].join("\r\n");
+      // Create workbook and add worksheet
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Auditions');
 
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;",
-    });
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `Auditions_${status}_${timestamp}.xlsx`;
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = `auditions-page-${currentPage}.csv`;
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    URL.revokeObjectURL(url);
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      window.alert('Failed to export to Excel. Please try again.');
+    }
   };
 
-  // PDF export will require a PDF library or backend export endpoint.
+  // Export auditions data to PDF format
   const handleExportPdf = () => {
-    window.alert(
-      "PDF export is not connected yet. We can implement it next."
-    );
+    if (auditions.length === 0) {
+      window.alert("There are no audition records to export.");
+      return;
+    }
+
+    try {
+      // Create new PDF document
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+
+      // Add title
+      const title = `${status} Auditions Report`;
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text(title, 14, 15);
+
+      // Add generation date
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      const dateStr = new Date().toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      doc.text(`Generated on: ${dateStr}`, 14, 22);
+
+      // Prepare table data
+      const tableHeaders = [
+        'S.No',
+        'Name',
+        'Mobile',
+        'Age',
+        'Gender',
+        'City',
+        'Email',
+        'Experience'
+      ];
+
+      const tableData = auditions.map((audition, index) => [
+        index + 1,
+        audition.full_name || '—',
+        audition.mobile_number || '—',
+        audition.age ?? '—',
+        audition.gender || '—',
+        audition.city || '—',
+        audition.email || '—',
+        audition.previous_experience || '—'
+      ]);
+
+      // Add table to PDF
+      doc.autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: 28,
+        theme: 'grid',
+        styles: {
+          fontSize: 9,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: 'bold',
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { top: 28, left: 14, right: 14 },
+      });
+
+      // Add footer with page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(
+          `Page ${i} of ${pageCount}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `Auditions_${status}_${timestamp}.pdf`;
+
+      // Download the file
+      doc.save(filename);
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      window.alert('Failed to export to PDF. Please try again.');
+    }
   };
 
   return (
@@ -231,32 +354,40 @@ export default function AuditionsPage() {
               ☑ Active
             </Link>
 
-            <Link
-              to="/admin/auditions/inactive"
-              onClick={() => setCurrentPage(1)}
-              className={`auditions-inactive-button ${
-                status === "Inactive"
-                  ? "auditions-inactive-selected"
-                  : ""
-              }`}
-              aria-current={status === "Inactive" ? "page" : undefined}
-            >
-              ⏸ Inactive
-            </Link>
+            {/* Only Super Admin can see Inactive tab */}
+            {canEdit && (
+              <Link
+                to="/admin/auditions/inactive"
+                onClick={() => setCurrentPage(1)}
+                className={`auditions-inactive-button ${
+                  status === "Inactive"
+                    ? "auditions-inactive-selected"
+                    : ""
+                }`}
+                aria-current={status === "Inactive" ? "page" : undefined}
+              >
+                ⏸ Inactive
+              </Link>
+            )}
 
+            {/* Add New is available to both admin roles. */}
+            {status === "Active" && (
+              <Link
+                to="/admin/auditions/create"
+                className="auditions-add-new-button"
+              >
+                <span>＋</span> Add New
+              </Link>
+            )}
+
+            {/* Export buttons available for both Admin and Super Admin */}
             {status === "Active" && (
               <>
-                <Link
-                  to="/admin/auditions/create"
-                  className="auditions-add-new-button"
-                >
-                  <span>＋</span> Add New
-                </Link>
-
                 <button
                   type="button"
                   className="auditions-export-excel"
                   onClick={handleExportExcel}
+                  disabled={loading || auditions.length === 0}
                 >
                   📊 Export Excel
                 </button>
@@ -265,6 +396,7 @@ export default function AuditionsPage() {
                   type="button"
                   className="auditions-export-pdf"
                   onClick={handleExportPdf}
+                  disabled={loading || auditions.length === 0}
                 >
                   📄 Export PDF
                 </button>
@@ -381,7 +513,9 @@ export default function AuditionsPage() {
                         >
                           View
                         </button>
-                        {status === "Active" ? (
+                        
+                        {/* Only Super Admin can edit and deactivate */}
+                        {canEdit && status === "Active" ? (
                           <>
                             <Link
                               to={`/admin/auditions/${encodeURIComponent(audition.id)}/edit`}
@@ -404,7 +538,7 @@ export default function AuditionsPage() {
                                 : "Deactivate"}
                             </button>
                           </>
-                        ) : (
+                        ) : canEdit && status === "Inactive" ? (
                           <button
                             type="button"
                             className="auditions-activate-button"
@@ -418,7 +552,7 @@ export default function AuditionsPage() {
                               ? "Activating..."
                               : "Activate"}
                           </button>
-                        )}
+                        ) : null}
                         </div>
                       </td>
                     </tr>

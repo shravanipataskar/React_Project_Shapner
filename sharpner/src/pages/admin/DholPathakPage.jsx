@@ -3,6 +3,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../../styles/pages/DholPathakPage.css";
 import { dholPathakApi } from "../../services/dholPathakApi";
 import DholPathakSidebar from "../../components/admin/DholPathakSidebar.jsx";
+import { useAuth } from "../../app/authContext.js";
+import { hasSuperAdminAccess } from "../../utils/userTypes.js";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const practiceDays = [
   "Monday",
@@ -46,6 +51,7 @@ const emptyForm = {
 export default function DholPathakPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const status = location.pathname.endsWith("/inactive") ? "Inactive" : "Active";
@@ -54,6 +60,17 @@ export default function DholPathakPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const [formData, setFormData] = useState({ ...emptyForm });
+
+  // Role-based access control - Only Super Admin can edit
+  const canEdit = hasSuperAdminAccess(user);
+  const isAdmin = !canEdit; // Everyone else is view-only
+
+  // Redirect admin users away from inactive records.
+  useEffect(() => {
+    if (isAdmin && status === "Inactive") {
+      navigate("/admin/dhol-pathak", { replace: true });
+    }
+  }, [isAdmin, status, navigate]);
 
   // API data and request states
   const [applications, setApplications] = useState([]);
@@ -264,6 +281,172 @@ export default function DholPathakPage() {
    */
   const getAgeGroup = (application) => {
     return application.age_group || "—";
+  };
+
+  // Export applications data to Excel format
+  const handleExportExcel = () => {
+    if (applications.length === 0) {
+      window.alert("There are no Dhol Pathak applications to export.");
+      return;
+    }
+
+    try {
+      // Prepare data for Excel export
+      const exportData = applications.map((application, index) => ({
+        'S.No': index + 1,
+        'ID': application.id || '',
+        'Full Name': application.full_name || '',
+        'Parent Name': application.parent_name || '',
+        'Mobile Number': application.mobile_number || '',
+        'City': application.city || '',
+        'Address': application.address || '',
+        'Age Group': application.age_group || '',
+        'School/College': application.school_college_name || '',
+        'Previous Experience': application.previous_dhol_experience || '',
+        'Own Instrument': application.can_bring_instrument || '',
+        'Medical Conditions': application.medical_conditions || '',
+        'Emergency Contact': application.emergency_contact || '',
+        'Weekly Availability': application.weekly_availability || '',
+        'Practice Days': application.available_practice_days || '',
+        'Preferred Location': application.preferred_location || '',
+        'Status': status,
+      }));
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 6 },  // S.No
+        { wch: 8 },  // ID
+        { wch: 20 }, // Full Name
+        { wch: 20 }, // Parent Name
+        { wch: 15 }, // Mobile Number
+        { wch: 15 }, // City
+        { wch: 30 }, // Address
+        { wch: 10 }, // Age Group
+        { wch: 25 }, // School/College
+        { wch: 15 }, // Previous Experience
+        { wch: 15 }, // Own Instrument
+        { wch: 25 }, // Medical Conditions
+        { wch: 15 }, // Emergency Contact
+        { wch: 20 }, // Weekly Availability
+        { wch: 30 }, // Practice Days
+        { wch: 20 }, // Preferred Location
+        { wch: 10 }, // Status
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Create workbook and add worksheet
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Dhol Pathak');
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `DholPathak_${status}_${timestamp}.xlsx`;
+
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      window.alert('Failed to export to Excel. Please try again.');
+    }
+  };
+
+  // Export applications data to PDF format
+  const handleExportPdf = () => {
+    if (applications.length === 0) {
+      window.alert("There are no Dhol Pathak applications to export.");
+      return;
+    }
+
+    try {
+      // Create new PDF document
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+
+      // Add title
+      const title = `${status} Dhol Pathak Applications Report`;
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text(title, 14, 15);
+
+      // Add generation date
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      const dateStr = new Date().toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      doc.text(`Generated on: ${dateStr}`, 14, 22);
+
+      // Prepare table data
+      const tableHeaders = [
+        'S.No',
+        'Name',
+        'Parent Name',
+        'Mobile',
+        'City',
+        'Age Group',
+        'Experience',
+        'Instrument'
+      ];
+
+      const tableData = applications.map((application, index) => [
+        index + 1,
+        application.full_name || '—',
+        application.parent_name || '—',
+        application.mobile_number || '—',
+        application.city || '—',
+        application.age_group || '—',
+        application.previous_dhol_experience || '—',
+        application.can_bring_instrument || '—'
+      ]);
+
+      // Add table to PDF
+      doc.autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: 28,
+        theme: 'grid',
+        styles: {
+          fontSize: 9,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: 'bold',
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { top: 28, left: 14, right: 14 },
+      });
+
+      // Add footer with page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(
+          `Page ${i} of ${pageCount}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `DholPathak_${status}_${timestamp}.pdf`;
+
+      // Download the file
+      doc.save(filename);
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      window.alert('Failed to export to PDF. Please try again.');
+    }
   };
 
   return (
@@ -621,35 +804,41 @@ export default function DholPathakPage() {
                   ☑ Active
                 </Link>
 
-                <Link
-                  to="/admin/dhol-pathak/inactive"
-                  className={`dhol-inactive-button ${
-                    status === "Inactive" ? "dhol-inactive-selected" : ""
-                  }`}
-                  aria-current={status === "Inactive" ? "page" : undefined}
-                >
-                  ⏸ Inactive
-                </Link>
+                {/* Only Super Admin can see Inactive tab */}
+                {canEdit && (
+                  <Link
+                    to="/admin/dhol-pathak/inactive"
+                    className={`dhol-inactive-button ${
+                      status === "Inactive" ? "dhol-inactive-selected" : ""
+                    }`}
+                    aria-current={status === "Inactive" ? "page" : undefined}
+                  >
+                    ⏸ Inactive
+                  </Link>
+                )}
 
+                {/* Add New is available to both admin roles. */}
+                {status === "Active" && (
+                  <button
+                    type="button"
+                    className="dhol-add-button"
+                    onClick={() => {
+                      setFormData({ ...emptyForm });
+                      setShowCreateForm(true);
+                    }}
+                  >
+                    <span>＋</span> Add New
+                  </button>
+                )}
+
+                {/* Export buttons available for both Admin and Super Admin */}
                 {status === "Active" && (
                   <>
                     <button
                       type="button"
-                      className="dhol-add-button"
-                      onClick={() => {
-                        setFormData({ ...emptyForm });
-                        setShowCreateForm(true);
-                      }}
-                    >
-                      <span>＋</span> Add New
-                    </button>
-
-                    <button
-                      type="button"
                       className="dhol-export-excel"
-                      onClick={() =>
-                        window.alert("Excel export is not connected yet.")
-                      }
+                      onClick={handleExportExcel}
+                      disabled={loading || applications.length === 0}
                     >
                       📊 Export Excel
                     </button>
@@ -657,9 +846,8 @@ export default function DholPathakPage() {
                     <button
                       type="button"
                       className="dhol-export-pdf"
-                      onClick={() =>
-                        window.alert("PDF export is not connected yet.")
-                      }
+                      onClick={handleExportPdf}
+                      disabled={loading || applications.length === 0}
                     >
                       📄 Export PDF
                     </button>
@@ -768,7 +956,8 @@ export default function DholPathakPage() {
                             >
                               View
                             </Link>
-                            {status === "Active" ? (
+                            {/* Only Super Admin can edit and deactivate */}
+                            {canEdit && status === "Active" ? (
                               <>
                                 <Link
                                   className="dhol-edit-button"
@@ -793,7 +982,7 @@ export default function DholPathakPage() {
                                     : "Deactivate"}
                                 </button>
                               </>
-                            ) : (
+                            ) : canEdit && status === "Inactive" ? (
                               <button
                                 type="button"
                                 className="dhol-activate-button"
@@ -809,7 +998,7 @@ export default function DholPathakPage() {
                                   ? "Activating..."
                                   : "Activate"}
                               </button>
-                            )}
+                            ) : null}
                           </div>
                         </td>
                       </tr>

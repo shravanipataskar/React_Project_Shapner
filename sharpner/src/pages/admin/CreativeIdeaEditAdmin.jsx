@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/layout/AdminLayout.jsx'
 import { ideasApi } from '../../services/ideasApi.js'
+import { 
+  isValidEmail, 
+  sanitizeEmailInput,
+  getEmailErrorMessage
+} from '../../utils/validation'
+import { useAuth } from '../../app/authContext.js'
 import '../../styles/pages/TalentShow.css'
 import '../../styles/pages/CreativeIdeasAdmin.css'
 import '../../styles/pages/CreativeIdeaCreateAdmin.css'
@@ -24,10 +30,19 @@ function getIdeaData(result) {
 function CreativeIdeaEditAdmin() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [formData, setFormData] = useState(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
+
+  // Redirect admin users (user_type "11" or 11) - only super admin can edit
+  useEffect(() => {
+    if (user?.user_type === "11" || user?.user_type === 11) {
+      navigate('/admin/ideas', { replace: true })
+    }
+  }, [user, navigate])
 
   useEffect(() => {
     let active = true
@@ -88,6 +103,14 @@ function CreativeIdeaEditAdmin() {
       [field]: value,
     }))
     setError('')
+    
+    // Clear field error when user edits
+    if (fieldErrors[field]) {
+      setFieldErrors((previous) => ({
+        ...previous,
+        [field]: '',
+      }))
+    }
   }
 
   async function handleSubmit(event) {
@@ -105,8 +128,25 @@ function CreativeIdeaEditAdmin() {
       return
     }
 
+    // Validate email if provided (optional field)
+    const validationErrors = {}
+    
+    if (formData.email && formData.email.trim()) {
+      const emailError = getEmailErrorMessage(formData.email, false)
+      if (emailError) {
+        validationErrors.email = emailError
+      }
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors)
+      setError('Please fix validation errors before submitting.')
+      return
+    }
+
     setSaving(true)
     setError('')
+    setFieldErrors({})
 
     try {
       await ideasApi.updateIdea(id, {
@@ -193,6 +233,11 @@ function CreativeIdeaEditAdmin() {
                   value={formData.email}
                   onChange={(event) => updateField('email', event.target.value)}
                 />
+                {fieldErrors.email && (
+                  <small style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                    {fieldErrors.email}
+                  </small>
+                )}
               </label>
 
               <label className="creative-idea-create-field">

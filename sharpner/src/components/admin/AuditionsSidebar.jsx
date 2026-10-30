@@ -8,7 +8,7 @@ import {
 export default function AuditionsSidebar({ isOpen, onClose, onToggle }) {
   const { pathname } = useLocation();
   const { logout, user } = useAuth();
-  const navigationItems = getNavigationItemsForRole(user?.role);
+  const navigationItems = getNavigationItemsForRole(user);
 
   const handleSignOut = async () => {
     if (window.confirm("Are you sure you want to sign out?")) {

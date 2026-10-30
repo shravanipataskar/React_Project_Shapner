@@ -40,10 +40,27 @@ class AdminUser
 
     public static function roleFor(User $user): string
     {
-        $roleNames = [
-            $user->getAttribute('user_type'),
-            $user->getAttribute('role'),
-        ];
+        $userType = trim((string) $user->getAttribute('user_type'));
+
+        if ($userType !== '') {
+            $roleValue = strtolower($userType);
+            $normalized = preg_replace('/[^a-z]/', '', $roleValue);
+
+            if ($roleValue === '00' || in_array($normalized, ['superadmin', 'superadministrator'], true)) {
+                return 'super_admin';
+            }
+
+            if (
+                $roleValue === '11' ||
+                in_array($normalized, ['admin', 'administrator'], true)
+            ) {
+                return 'admin';
+            }
+
+            return $normalized !== '' ? $normalized : 'user';
+        }
+
+        $roleNames = [$user->getAttribute('role')];
 
         if (
             $user->getAttribute('user_role_id') &&

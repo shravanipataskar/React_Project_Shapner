@@ -34,7 +34,7 @@ export function ProtectedRoute() {
 export function AdminFeatureRoute() {
   const { user } = useAuth();
 
-  if (!hasAdminAccess(user?.role)) {
+  if (!hasAdminAccess(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -44,7 +44,7 @@ export function AdminFeatureRoute() {
 export function SuperAdminFeatureRoute() {
   const { user } = useAuth();
 
-  if (!hasSuperAdminAccess(user?.role)) {
+  if (!hasSuperAdminAccess(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 

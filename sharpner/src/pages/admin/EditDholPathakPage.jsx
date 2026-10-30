@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DholPathakSidebar from "../../components/admin/DholPathakSidebar.jsx";
 import { dholPathakApi } from "../../services/dholPathakApi";
+import { useAuth } from "../../app/authContext.js";
 import "../../styles/pages/DholPathakPage.css";
 
 const practiceDays = [
@@ -116,6 +117,7 @@ function ChoiceField({ label, required, children }) {
 export default function EditDholPathakPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestState, setRequestState] = useState({
     id: null,
@@ -125,6 +127,13 @@ export default function EditDholPathakPage() {
   const [formData, setFormData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+
+  // Redirect admin users (user_type "11" or 11) - only super admin can edit
+  useEffect(() => {
+    if (user?.user_type === "11" || user?.user_type === 11) {
+      navigate("/admin/dhol-pathak", { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const controller = new AbortController();

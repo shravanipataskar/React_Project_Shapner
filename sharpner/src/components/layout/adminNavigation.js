@@ -15,12 +15,16 @@ export const adminNavigationItems = [
   { icon: '♧', label: 'Users', path: '/admin/users' },
 ]
 
-export function getNavigationItemsForRole(role) {
-  if (hasSuperAdminAccess(role)) {
+export function getNavigationItemsForRole(user) {
+  if (!user) {
+    return adminNavigationItems.filter((item) => item.path === '/dashboard')
+  }
+
+  if (hasSuperAdminAccess(user)) {
     return adminNavigationItems
   }
 
-  if (hasAdminAccess(role)) {
+  if (hasAdminAccess(user)) {
     return adminNavigationItems.filter((item) => item.label !== 'Users')
   }
 

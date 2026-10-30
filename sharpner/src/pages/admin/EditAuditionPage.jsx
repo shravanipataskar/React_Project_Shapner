@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AuditionsSidebar from "../../components/admin/AuditionsSidebar.jsx";
 import { auditionsApi } from "../../services/auditionsApi";
+import { useAuth } from "../../app/authContext.js";
+import { 
+  isValidPhoneNumber, 
+  isValidEmail, 
+  sanitizePhoneInput,
+  getPhoneErrorMessage,
+  getEmailErrorMessage
+} from "../../utils/validation";
 import "../../styles/pages/AuditionsPage.css";
 import "../../styles/pages/CreateAuditionPage.css";
 
@@ -324,6 +332,7 @@ function Field({
   options,
   value,
   onChange,
+  error,
 }) {
   return (
     <div className="audition-field">
@@ -363,7 +372,20 @@ function Field({
           value={value}
           onChange={onChange}
           required={required}
+          inputMode={type === "tel" ? "numeric" : undefined}
+          maxLength={
+            name === "mobileNumber" || 
+            name === "whatsappNumber" || 
+            name === "emergencyContact" 
+              ? 10 
+              : undefined
+          }
         />
+      )}
+      {error && (
+        <small className="audition-field-error" style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+          {error}
+        </small>
       )}
     </div>
   );
@@ -412,6 +434,7 @@ function getErrorMessage(error) {
 export default function EditAuditionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [requestState, setRequestState] = useState({
     id: null,
@@ -422,6 +445,14 @@ export default function EditAuditionPage() {
   const [formData, setFormData] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // Redirect admin users (user_type "11" or 11) - they don't have permission to edit auditions
+  useEffect(() => {
+    if (user?.user_type === "11" || user?.user_type === 11) {
+      navigate("/admin/auditions", { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -471,8 +502,31 @@ export default function EditAuditionPage() {
 
   const updateField = (event) => {
     const { name, value } = event.target;
-    setFormData((previous) => ({ ...previous, [name]: value }));
+    
+    // Sanitize phone fields to allow only numeric input
+    let cleanedValue = value;
+    if (
+      name === 'mobileNumber' || 
+      name === 'whatsappNumber' || 
+      name === 'emergencyContact'
+    ) {
+      cleanedValue = sanitizePhoneInput(value);
+      // Limit to 10 digits
+      if (cleanedValue.length > 10) {
+        cleanedValue = cleanedValue.slice(0, 10);
+      }
+    }
+    
+    setFormData((previous) => ({ ...previous, [name]: cleanedValue }));
     setSubmitError("");
+    
+    // Clear field error when user edits
+    if (fieldErrors[name]) {
+      setFieldErrors((previous) => ({
+        ...previous,
+        [name]: "",
+      }));
+    }
   };
 
   const updateCheckbox = (event) => {
@@ -488,6 +542,38 @@ export default function EditAuditionPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    
+    // Validate phone numbers and email
+    const validationErrors = {};
+    
+    const mobileError = getPhoneErrorMessage(formData.mobileNumber, true);
+    if (mobileError) {
+      validationErrors.mobileNumber = mobileError;
+    }
+    
+    if (formData.whatsappNumber && formData.whatsappNumber.trim()) {
+      const whatsappError = getPhoneErrorMessage(formData.whatsappNumber, false);
+      if (whatsappError) {
+        validationErrors.whatsappNumber = whatsappError;
+      }
+    }
+    
+    const emailError = getEmailErrorMessage(formData.email, true);
+    if (emailError) {
+      validationErrors.email = emailError;
+    }
+    
+    const emergencyError = getPhoneErrorMessage(formData.emergencyContact, true);
+    if (emergencyError) {
+      validationErrors.emergencyContact = emergencyError;
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      setSubmitError("Please fix validation errors before submitting.");
+      return;
+    }
+    
     setSubmitting(true);
     setSubmitError("");
 
@@ -690,11 +776,11 @@ export default function EditAuditionPage() {
                     ),
                   ]}
                 />
-                <Field label="Mobile Number" name="mobileNumber" type="tel" value={formData.mobileNumber} onChange={updateField} required />
-                <Field label="WhatsApp Number (Optional)" name="whatsappNumber" type="tel" value={formData.whatsappNumber} onChange={updateField} />
-                <Field label="Email" name="email" type="email" value={formData.email} onChange={updateField} required />
+                <Field label="Mobile Number" name="mobileNumber" type="tel" value={formData.mobileNumber} onChange={updateField} required error={fieldErrors.mobileNumber} />
+                <Field label="WhatsApp Number (Optional)" name="whatsappNumber" type="tel" value={formData.whatsappNumber} onChange={updateField} error={fieldErrors.whatsappNumber} />
+                <Field label="Email" name="email" type="email" value={formData.email} onChange={updateField} required error={fieldErrors.email} />
                 <Field label="City" name="parentCity" value={formData.parentCity} onChange={updateField} required />
-                <Field label="Emergency Contact" name="emergencyContact" type="tel" value={formData.emergencyContact} onChange={updateField} required />
+                <Field label="Emergency Contact" name="emergencyContact" type="tel" value={formData.emergencyContact} onChange={updateField} required error={fieldErrors.emergencyContact} />
               </div>
             </Section>
 

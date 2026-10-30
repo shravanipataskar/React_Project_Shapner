@@ -85,6 +85,7 @@ class AuthController extends Controller
             'name' => $user->getAttribute('name'),
             'username' => $username,
             'email' => $user->getAttribute('email'),
+            'user_type' => $user->getAttribute('user_type'),
             'role' => AdminUser::roleFor($user),
         ];
     }
