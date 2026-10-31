@@ -21,69 +21,25 @@ export function getUserTypeValue(value) {
 }
 
 export function hasAdminAccess(userOrType) {
-  const typeToCheck =
+  const userType =
     typeof userOrType === "object" && userOrType !== null
-      ? userOrType.user_type ??
-        userOrType.role?.user_type ??
-        userOrType.role?.name ??
-        userOrType.role
+      ? userOrType.user_type
       : userOrType;
+  const normalized = String(userType ?? "").trim();
 
-  if (typeToCheck === null || typeToCheck === undefined) return false;
-
-  const normalized = String(typeToCheck)
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-
-  return [
-    "00",
-    "11",
-    "admin",
-    "administrator",
-    "super_admin",
-    "superadmin",
-    "super_administrator",
-  ].includes(normalized);
+  return normalized === "00" || normalized === "11";
 }
 
 export function hasSuperAdminAccess(user) {
-  if (user === null || user === undefined) return false;
+  const userType =
+    typeof user === "object" && user !== null ? user.user_type : user;
 
-  const typeToCheck =
-    typeof user === "object"
-      ? user.user_type ??
-        user.role?.user_type ??
-        user.role?.name ??
-        user.role
-      : user;
-  const normalized = String(typeToCheck ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-
-  return [
-    "00",
-    "super_admin",
-    "superadmin",
-    "super_administrator",
-  ].includes(normalized);
+  return String(userType ?? "").trim() === "00";
 }
 
 export function hasViewOnlyAccess(user) {
-  if (user === null || user === undefined) return false;
+  const userType =
+    typeof user === "object" && user !== null ? user.user_type : user;
 
-  const typeToCheck =
-    typeof user === "object"
-      ? user.user_type ??
-        user.role?.user_type ??
-        user.role?.name ??
-        user.role
-      : user;
-  const normalized = String(typeToCheck ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-
-  return ["11", "admin", "administrator"].includes(normalized);
+  return String(userType ?? "").trim() === "11";
 }

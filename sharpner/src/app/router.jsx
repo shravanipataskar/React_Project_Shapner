@@ -73,28 +73,27 @@ function AppRouter() {
             <Route element={<AdminFeatureRoute />}>
               <Route path="/admin/talent-show" element={<TalentShow />} />
               <Route path="/admin/talent-shows" element={<TalentShow />} />
-              <Route path="/admin/talent-show/create" element={<TalentShowCreate />} />
-              <Route path="/admin/talent-shows/create" element={<TalentShowCreate />} />
               <Route path="/admin/talent-show/:id" element={<TalentShowView />} />
               <Route path="/admin/ideas" element={<CreativeIdeasAdmin />} />
-              <Route path="/admin/ideas/create" element={<CreativeIdeaCreateAdmin />} />
               <Route path="/admin/creative-ideas" element={<Navigate to="/admin/ideas" replace />} />
               <Route path="/admin/collaborations" element={<CollaborationsAdmin />} />
-              <Route path="/admin/collaborations/create" element={<CollaborationCreateAdmin />} />
               <Route path="/admin/collaborations/:id" element={<CollaborationDetailsAdmin />} />
               <Route path="/admin/brand-deals" element={<CollaborationsAdmin />} />
               <Route path="/admin/tickets" element={<TicketsAdmin />} />
-              <Route path="/admin/tickets/create" element={<TicketCreateAdmin />} />
               <Route path="/admin/tickets/:id" element={<TicketDetailsAdmin />} />
               <Route path="/admin/videos" element={<VideoPage />} />
               <Route path="/admin/auditions" element={<AuditionsPage />} />
               <Route path="/admin/auditions/:id" element={<AuditionDetailsPage />} />
               <Route path="/admin/dhol-pathak" element={<DholPathakPage />} />
               <Route path="/admin/dhol-pathak/:id" element={<DholPathakDetailsPage />} />
-              <Route path="/videos/create" element={<CreateVideoPage />} />
-              <Route path="/admin/auditions/create" element={<CreateAuditionPage />} />
-
               <Route element={<SuperAdminFeatureRoute />}>
+                <Route path="/admin/talent-show/create" element={<TalentShowCreate />} />
+                <Route path="/admin/talent-shows/create" element={<TalentShowCreate />} />
+                <Route path="/admin/ideas/create" element={<CreativeIdeaCreateAdmin />} />
+                <Route path="/admin/collaborations/create" element={<CollaborationCreateAdmin />} />
+                <Route path="/admin/tickets/create" element={<TicketCreateAdmin />} />
+                <Route path="/videos/create" element={<CreateVideoPage />} />
+                <Route path="/admin/auditions/create" element={<CreateAuditionPage />} />
                 <Route path="/admin/talent-show/inactive" element={<TalentShow />} />
                 <Route path="/admin/talent-shows/inactive" element={<TalentShow />} />
                 <Route path="/admin/talent-show/:id/edit" element={<TalentShowEdit />} />

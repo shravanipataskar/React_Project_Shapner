@@ -90,12 +90,14 @@ export default function Dashboard() {
                 🎬 Manage Videos
               </Link>
 
-              <Link
-                to="/videos/create"
-                className="dashboard-action dashboard-action-gray"
-              >
-                ➕ Add New Video
-              </Link>
+              {isSuperAdmin && (
+                <Link
+                  to="/videos/create"
+                  className="dashboard-action dashboard-action-gray"
+                >
+                  ➕ Add New Video
+                </Link>
+              )}
 
               {isSuperAdmin && (
                 <Link

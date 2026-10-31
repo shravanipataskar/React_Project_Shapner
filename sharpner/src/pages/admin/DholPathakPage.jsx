@@ -817,8 +817,7 @@ export default function DholPathakPage() {
                   </Link>
                 )}
 
-                {/* Add New is available to both admin roles. */}
-                {status === "Active" && (
+                {canEdit && status === "Active" && (
                   <button
                     type="button"
                     className="dhol-add-button"

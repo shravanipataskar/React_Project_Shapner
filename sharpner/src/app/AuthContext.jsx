@@ -6,6 +6,7 @@ import {
 } from "react";
 import { authApi } from "../services/authApi.js";
 import { AuthContext } from "./authContext.js";
+import { installRequiredFormValidation } from "../utils/requiredFormValidation.js";
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState({
@@ -34,6 +35,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true;
+    const removeFormValidation = installRequiredFormValidation();
 
     const handleUnauthorized = () => {
       setAuth({ status: "unauthenticated", user: null, error: null });
@@ -64,6 +66,7 @@ export function AuthProvider({ children }) {
     return () => {
       active = false;
       window.removeEventListener("sharpner:unauthorized", handleUnauthorized);
+      removeFormValidation();
     };
   }, []);
 

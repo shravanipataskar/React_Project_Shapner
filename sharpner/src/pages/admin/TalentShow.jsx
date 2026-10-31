@@ -308,8 +308,7 @@ export default function TalentShow() {
               </Link>
             )}
 
-            {/* Add New is available to both admin roles. */}
-            {statusFilter === 'active' && (
+            {canEdit && statusFilter === 'active' && (
               <Link
                 className="talent-show-button talent-show-button-add"
                 to="/admin/talent-show/create"

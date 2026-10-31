@@ -306,7 +306,7 @@ function TicketsAdmin() {
               </Link>
             )}
 
-            {statusFilter === 'active' && (
+            {canEdit && statusFilter === 'active' && (
               <Link
                 className="talent-show-button talent-show-button-add"
                 to="/admin/tickets/create"

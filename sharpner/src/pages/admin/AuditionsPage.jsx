@@ -370,8 +370,7 @@ export default function AuditionsPage() {
               </Link>
             )}
 
-            {/* Add New is available to both admin roles. */}
-            {status === "Active" && (
+            {canEdit && status === "Active" && (
               <Link
                 to="/admin/auditions/create"
                 className="auditions-add-new-button"

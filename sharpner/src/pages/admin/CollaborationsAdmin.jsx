@@ -254,8 +254,7 @@ const CollaborationsAdmin = () => {
               </Link>
             )}
 
-            {/* Add New is available to both admin roles. */}
-            {!isInactivePage && (
+            {canEdit && !isInactivePage && (
               <Link
                 className="talent-show-button talent-show-button-add"
                 to="/admin/collaborations/create"

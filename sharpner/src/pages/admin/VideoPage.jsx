@@ -284,8 +284,7 @@ export default function VideosPage() {
               </Link>
             )}
 
-            {/* Add New is available to both admin roles. */}
-            {(canEdit || statusFilter === "Active") && (
+            {canEdit && statusFilter === "Active" && (
               <Link to="/videos/create" className="videos-add-new-link">
                 <span>＋</span>
                 Add New
