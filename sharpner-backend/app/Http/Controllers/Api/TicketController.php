@@ -24,37 +24,41 @@ class TicketController extends Controller
      */
     public function createOptions(Request $request)
     {
-        $validated = $request->validate([
-            'application_id' => ['nullable', 'integer', 'exists:applications,id'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'application_id' => ['nullable', 'integer', 'exists:applications,id'],
+            ]);
 
-        $modules = DB::table('modules')
-            ->where('status', 1)
-            ->when(
-                isset($validated['application_id']),
-                fn ($query) => $query->where(
-                    'application_id',
-                    $validated['application_id']
+            $modules = DB::table('modules')
+                ->where('status', 1)
+                ->when(
+                    isset($validated['application_id']),
+                    fn ($query) => $query->where(
+                        'application_id',
+                        $validated['application_id']
+                    )
                 )
-            )
-            ->select(['id', 'application_id', 'module_name'])
-            ->orderBy('module_name')
-            ->get();
+                ->select(['id', 'application_id', 'module_name'])
+                ->orderBy('module_name')
+                ->get();
 
-        return response()->json([
-            'data' => [
-                'applications' => DB::table('applications')
-                    ->where('status', 1)
-                    ->select(['id', 'app_name'])
-                    ->orderBy('app_name')
-                    ->get(),
-                'modules' => $modules,
-                'categories' => self::CATEGORIES,
-                'item_types' => self::ITEM_TYPES,
-                'priorities' => self::PRIORITIES,
-                'severities' => self::SEVERITIES,
-            ],
-        ]);
+            return response()->json([
+                'data' => [
+                    'applications' => DB::table('applications')
+                        ->where('status', 1)
+                        ->select(['id', 'app_name'])
+                        ->orderBy('app_name')
+                        ->get(),
+                    'modules' => $modules,
+                    'categories' => self::CATEGORIES,
+                    'item_types' => self::ITEM_TYPES,
+                    'priorities' => self::PRIORITIES,
+                    'severities' => self::SEVERITIES,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            throw $e;
+        }
     }
 
     /**
@@ -130,63 +134,72 @@ class TicketController extends Controller
 
         $storedFiles = [];
 
+        /*
+         * Transaction purpose: Ensure the ticket and all of its ticket items
+         * are created atomically. If any database operation fails, all
+         * database changes are rolled back and uploaded files are removed.
+         */
         try {
-            $ticket = DB::transaction(function () use ($request, $validated, &$storedFiles) {
-                $now = now();
-                $ticketNo = $this->makeTicketNumber();
-                $attachment = $request->file('attachment');
-                $attachmentPath = $attachment
-                    ? $attachment->store('uploads/tickets', 'public')
+            DB::beginTransaction();
+
+            $now = now();
+            $ticketNo = $this->makeTicketNumber();
+            $attachment = $request->file('attachment');
+            $attachmentPath = $attachment
+                ? $attachment->store('uploads/tickets', 'public')
+                : null;
+
+            if ($attachmentPath) {
+                $storedFiles[] = $attachmentPath;
+            }
+
+            $ticketId = DB::table('tickets')->insertGetId([
+                'ticket_no' => $ticketNo,
+                'application_id' => $validated['application_id'],
+                'module_id' => $validated['module_id'],
+                'user_id' => $validated['user_id'],
+                'subject' => $validated['subject'],
+                'description' => $validated['description'],
+                'category' => $validated['category'],
+                'ticket_status' => 'Open',
+                'attachment' => $attachmentPath,
+                'status' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            foreach ($validated['items'] as $index => $item) {
+                $itemAttachment = $request->file("items.$index.attachment");
+                $itemAttachmentPath = $itemAttachment
+                    ? $itemAttachment->store('uploads/tickets/items', 'public')
                     : null;
 
-                if ($attachmentPath) {
-                    $storedFiles[] = $attachmentPath;
+                if ($itemAttachmentPath) {
+                    $storedFiles[] = $itemAttachmentPath;
                 }
 
-                $ticketId = DB::table('tickets')->insertGetId([
-                    'ticket_no' => $ticketNo,
-                    'application_id' => $validated['application_id'],
-                    'module_id' => $validated['module_id'],
-                    'user_id' => $validated['user_id'],
-                    'subject' => $validated['subject'],
-                    'description' => $validated['description'],
-                    'category' => $validated['category'],
+                DB::table('ticket_items')->insert([
+                    'ticket_id' => $ticketId,
+                    'title' => $item['title'],
+                    'description' => $item['description'] ?? null,
+                    'item_type' => $item['item_type'],
+                    'priority' => $item['priority'],
+                    'severity' => $item['severity'],
                     'ticket_status' => 'Open',
-                    'attachment' => $attachmentPath,
+                    'attachment' => $itemAttachmentPath,
                     'status' => 1,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]);
+            }
 
-                foreach ($validated['items'] as $index => $item) {
-                    $itemAttachment = $request->file("items.$index.attachment");
-                    $itemAttachmentPath = $itemAttachment
-                        ? $itemAttachment->store('uploads/tickets/items', 'public')
-                        : null;
+            $ticket = DB::table('tickets')->where('id', $ticketId)->first();
 
-                    if ($itemAttachmentPath) {
-                        $storedFiles[] = $itemAttachmentPath;
-                    }
-
-                    DB::table('ticket_items')->insert([
-                        'ticket_id' => $ticketId,
-                        'title' => $item['title'],
-                        'description' => $item['description'] ?? null,
-                        'item_type' => $item['item_type'],
-                        'priority' => $item['priority'],
-                        'severity' => $item['severity'],
-                        'ticket_status' => 'Open',
-                        'attachment' => $itemAttachmentPath,
-                        'status' => 1,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ]);
-                }
-
-                return DB::table('tickets')->where('id', $ticketId)->first();
-            });
+            DB::commit();
         } catch (\Throwable $exception) {
+            DB::rollBack();
             Storage::disk('public')->delete($storedFiles);
+
             throw $exception;
         }
 
@@ -296,9 +309,7 @@ class TicketController extends Controller
                 'message' => 'Tickets fetched successfully.',
                 'data' => $tickets,
             ], 200);
-
         } catch (\Throwable $e) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to fetch tickets.',
@@ -314,6 +325,7 @@ class TicketController extends Controller
     public function update(Request $request, $id)
     {
         $ticket = DB::table('tickets')->where('id', $id)->first();
+
         if (! $ticket) {
             return response()->json([
                 'success' => false,
@@ -378,6 +390,7 @@ class TicketController extends Controller
             ->where('status', 1)
             ->get()
             ->keyBy('id');
+
         foreach ($validated['items'] as $item) {
             if (
                 isset($item['id']) &&
@@ -391,82 +404,91 @@ class TicketController extends Controller
         }
 
         $storedFiles = [];
+
+        /*
+         * Transaction purpose: Ensure the ticket update, item updates,
+         * new item creation, and item deactivation are completed atomically.
+         * If any database operation fails, all database changes are rolled
+         * back and any newly uploaded files are removed.
+         */
         try {
-            DB::transaction(function () use (
-                $request,
-                $validated,
-                $id,
-                $ticket,
-                $existingItems,
-                &$storedFiles
-            ) {
-                $now = now();
-                $attachment = $request->file('attachment');
-                $attachmentPath = $attachment
-                    ? $attachment->store('uploads/tickets', 'public')
-                    : $ticket->attachment;
-                if ($attachment && $attachmentPath) {
-                    $storedFiles[] = $attachmentPath;
+            DB::beginTransaction();
+
+            $now = now();
+            $attachment = $request->file('attachment');
+            $attachmentPath = $attachment
+                ? $attachment->store('uploads/tickets', 'public')
+                : $ticket->attachment;
+
+            if ($attachment && $attachmentPath) {
+                $storedFiles[] = $attachmentPath;
+            }
+
+            DB::table('tickets')->where('id', $id)->update([
+                'application_id' => $validated['application_id'],
+                'module_id' => $validated['module_id'],
+                'subject' => $validated['subject'],
+                'description' => $validated['description'],
+                'category' => $validated['category'],
+                'attachment' => $attachmentPath,
+                'updated_at' => $now,
+            ]);
+
+            $submittedItemIds = [];
+
+            foreach ($validated['items'] as $index => $item) {
+                $existingItem = isset($item['id'])
+                    ? $existingItems->get((int) $item['id'])
+                    : null;
+
+                $itemAttachment = $request->file("items.$index.attachment");
+                $itemAttachmentPath = $itemAttachment
+                    ? $itemAttachment->store('uploads/tickets/items', 'public')
+                    : ($existingItem->attachment ?? null);
+
+                if ($itemAttachment && $itemAttachmentPath) {
+                    $storedFiles[] = $itemAttachmentPath;
                 }
 
-                DB::table('tickets')->where('id', $id)->update([
-                    'application_id' => $validated['application_id'],
-                    'module_id' => $validated['module_id'],
-                    'subject' => $validated['subject'],
-                    'description' => $validated['description'],
-                    'category' => $validated['category'],
-                    'attachment' => $attachmentPath,
+                $fields = [
+                    'title' => $item['title'],
+                    'description' => $item['description'] ?? null,
+                    'item_type' => $item['item_type'],
+                    'priority' => $item['priority'],
+                    'severity' => $item['severity'],
+                    'attachment' => $itemAttachmentPath,
                     'updated_at' => $now,
-                ]);
+                ];
 
-                $submittedItemIds = [];
-                foreach ($validated['items'] as $index => $item) {
-                    $existingItem = isset($item['id'])
-                        ? $existingItems->get((int) $item['id'])
-                        : null;
-                    $itemAttachment = $request->file("items.$index.attachment");
-                    $itemAttachmentPath = $itemAttachment
-                        ? $itemAttachment->store('uploads/tickets/items', 'public')
-                        : ($existingItem->attachment ?? null);
-                    if ($itemAttachment && $itemAttachmentPath) {
-                        $storedFiles[] = $itemAttachmentPath;
-                    }
+                if ($existingItem) {
+                    DB::table('ticket_items')
+                        ->where('id', $existingItem->id)
+                        ->update($fields);
 
-                    $fields = [
-                        'title' => $item['title'],
-                        'description' => $item['description'] ?? null,
-                        'item_type' => $item['item_type'],
-                        'priority' => $item['priority'],
-                        'severity' => $item['severity'],
-                        'attachment' => $itemAttachmentPath,
-                        'updated_at' => $now,
-                    ];
-
-                    if ($existingItem) {
-                        DB::table('ticket_items')
-                            ->where('id', $existingItem->id)
-                            ->update($fields);
-                        $submittedItemIds[] = $existingItem->id;
-                    } else {
-                        $submittedItemIds[] = DB::table('ticket_items')
-                            ->insertGetId([
-                                ...$fields,
-                                'ticket_id' => $id,
-                                'ticket_status' => 'Open',
-                                'status' => 1,
-                                'created_at' => $now,
-                            ]);
-                    }
+                    $submittedItemIds[] = $existingItem->id;
+                } else {
+                    $submittedItemIds[] = DB::table('ticket_items')
+                        ->insertGetId([
+                            ...$fields,
+                            'ticket_id' => $id,
+                            'ticket_status' => 'Open',
+                            'status' => 1,
+                            'created_at' => $now,
+                        ]);
                 }
+            }
 
-                DB::table('ticket_items')
-                    ->where('ticket_id', $id)
-                    ->where('status', 1)
-                    ->whereNotIn('id', $submittedItemIds)
-                    ->update(['status' => 0, 'updated_at' => $now]);
-            });
+            DB::table('ticket_items')
+                ->where('ticket_id', $id)
+                ->where('status', 1)
+                ->whereNotIn('id', $submittedItemIds)
+                ->update(['status' => 0, 'updated_at' => $now]);
+
+            DB::commit();
         } catch (\Throwable $exception) {
+            DB::rollBack();
             Storage::disk('public')->delete($storedFiles);
+
             throw $exception;
         }
 
@@ -506,9 +528,7 @@ class TicketController extends Controller
                 'message' => 'Ticket fetched successfully.',
                 'data' => $ticket,
             ], 200);
-
         } catch (\Throwable $e) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to fetch ticket.',
@@ -523,12 +543,21 @@ class TicketController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        /*
+         * Transaction purpose: Ensure the ticket status change is completed
+         * atomically. If the database update fails, the transaction is rolled
+         * back so the previous ticket status is preserved.
+         */
         try {
+            DB::beginTransaction();
+
             $ticket = DB::table('tickets')
                 ->where('id', $id)
                 ->first();
 
             if (! $ticket) {
+                DB::rollBack();
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Ticket not found.',
@@ -549,6 +578,8 @@ class TicketController extends Controller
                     'updated_at' => now(),
                 ]);
 
+            DB::commit();
+
             $actionText = $status === 1 ? 'activated' : 'deactivated';
 
             return response()->json([
@@ -560,6 +591,8 @@ class TicketController extends Controller
                 ],
             ]);
         } catch (\Throwable $e) {
+            DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to update ticket status.',
@@ -568,4 +601,3 @@ class TicketController extends Controller
         }
     }
 }
-

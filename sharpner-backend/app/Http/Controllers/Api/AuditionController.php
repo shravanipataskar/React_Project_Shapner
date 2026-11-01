@@ -26,7 +26,11 @@ class AuditionController extends Controller
         $data = $validator->validated();
         $now = now();
 
-        $application = DB::transaction(function () use ($data, $now) {
+        // Transaction purpose: ensure the audition and all related records are
+        // saved together. If any database operation fails, all changes are rolled back.
+        try {
+            DB::beginTransaction();
+
             $childId = DB::table('child_auditions')->insertGetId([
                 'audition_type' => $data['audition_type'],
                 'full_name' => $data['full_name'],
@@ -88,6 +92,7 @@ class AuditionController extends Controller
                 ...($data['languages'] ?? []),
                 $data['other_language'] ?? null,
             ])));
+
             if ($languages !== []) {
                 DB::table('child_languages')->insert(array_map(
                     fn ($language) => [
@@ -105,6 +110,7 @@ class AuditionController extends Controller
                 ...($data['talents'] ?? []),
                 $data['other_talent'] ?? null,
             ])));
+
             if ($talents !== []) {
                 DB::table('child_talents')->insert(array_map(
                     fn ($talent) => [
@@ -119,6 +125,7 @@ class AuditionController extends Controller
             }
 
             $conditions = [];
+
             foreach ([
                 'has_medical_condition' => 'Medical condition',
                 'has_allergies' => 'Allergy',
@@ -135,6 +142,7 @@ class AuditionController extends Controller
                     ];
                 }
             }
+
             if ($conditions !== []) {
                 DB::table('child_medical_conditions')->insert($conditions);
             }
@@ -154,13 +162,24 @@ class AuditionController extends Controller
                 'updated_at' => $now,
             ]);
 
-            return DB::table('child_auditions')->where('id', $childId)->first();
-        });
+            $application = DB::table('child_auditions')
+                ->where('id', $childId)
+                ->first();
 
-        return response()->json([
-            'message' => 'Audition application created successfully.',
-            'data' => $application,
-        ], 201);
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Audition application created successfully.',
+                'data' => $application,
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Failed to create audition application.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     private function auditionRules(): array
@@ -226,81 +245,88 @@ class AuditionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DB::table('child_auditions')
-            ->select([
-                'child_auditions.id',
-                'child_auditions.full_name',
-                'child_auditions.age',
-                'child_auditions.city',
-                'child_auditions.status',
-                'child_auditions.application_status',
-                'child_auditions.created_at',
-            ])
-            ->selectSub(function ($subquery) {
-                $subquery->from('child_parents')
-                    ->select('mobile_number')
-                    ->whereColumn(
-                        'child_parents.child_id',
-                        'child_auditions.id'
-                    )
-                    ->where('child_parents.status', 1)
-                    ->orderBy('child_parents.id')
-                    ->limit(1);
-            }, 'mobile_number');
+        try {
+            $query = DB::table('child_auditions')
+                ->select([
+                    'child_auditions.id',
+                    'child_auditions.full_name',
+                    'child_auditions.age',
+                    'child_auditions.city',
+                    'child_auditions.status',
+                    'child_auditions.application_status',
+                    'child_auditions.created_at',
+                ])
+                ->selectSub(function ($subquery) {
+                    $subquery->from('child_parents')
+                        ->select('mobile_number')
+                        ->whereColumn(
+                            'child_parents.child_id',
+                            'child_auditions.id'
+                        )
+                        ->where('child_parents.status', 1)
+                        ->orderBy('child_parents.id')
+                        ->limit(1);
+                }, 'mobile_number');
 
-        // Active or inactive applications.
-        if ($request->has('status')) {
-            $status = $request->query('status');
+            // Active or inactive applications.
+            if ($request->has('status')) {
+                $status = $request->query('status');
 
-            if (! in_array((string) $status, ['0', '1'], true)) {
-                return response()->json([
-                    'message' => 'Status must be 0 or 1.',
-                ], 422);
+                if (! in_array((string) $status, ['0', '1'], true)) {
+                    return response()->json([
+                        'message' => 'Status must be 0 or 1.',
+                    ], 422);
+                }
+
+                $query->where('child_auditions.status', (int) $status);
             }
 
-            $query->where('child_auditions.status', (int) $status);
+            // Search by applicant name, city, or parent mobile number.
+            $search = trim((string) $request->query('search', ''));
+
+            if ($search !== '') {
+                $query->where(function ($subquery) use ($search) {
+                    $subquery
+                        ->where(
+                            'child_auditions.full_name',
+                            'like',
+                            '%'.$search.'%'
+                        )
+                        ->orWhere(
+                            'child_auditions.city',
+                            'like',
+                            '%'.$search.'%'
+                        )
+                        ->orWhereExists(function ($parentQuery) use ($search) {
+                            $parentQuery->select(DB::raw(1))
+                                ->from('child_parents')
+                                ->whereColumn(
+                                    'child_parents.child_id',
+                                    'child_auditions.id'
+                                )
+                                ->where(
+                                    'child_parents.mobile_number',
+                                    'like',
+                                    '%'.$search.'%'
+                                );
+                        });
+                });
+            }
+
+            // Most recent applications first.
+            $query->orderByDesc('child_auditions.id');
+
+            $perPage = 10;
+
+            $auditions = $query->paginate($perPage);
+
+            return response()->json($auditions);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Failed to fetch audition applications.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        // Search by applicant name, city, or parent mobile number.
-        $search = trim((string) $request->query('search', ''));
-
-        if ($search !== '') {
-            $query->where(function ($subquery) use ($search) {
-                $subquery
-                    ->where(
-                        'child_auditions.full_name',
-                        'like',
-                        '%'.$search.'%'
-                    )
-                    ->orWhere(
-                        'child_auditions.city',
-                        'like',
-                        '%'.$search.'%'
-                    )
-                    ->orWhereExists(function ($parentQuery) use ($search) {
-                        $parentQuery->select(DB::raw(1))
-                            ->from('child_parents')
-                            ->whereColumn(
-                                'child_parents.child_id',
-                                'child_auditions.id'
-                            )
-                            ->where(
-                                'child_parents.mobile_number',
-                                'like',
-                                '%'.$search.'%'
-                            );
-                    });
-            });
-        }
-
-        // Most recent applications first.
-        $query->orderByDesc('child_auditions.id');
-
-        $perPage = 10;
-
-        $auditions = $query->paginate($perPage);
-
-        return response()->json($auditions);
     }
 
     /**
@@ -308,17 +334,24 @@ class AuditionController extends Controller
      */
     public function show($id)
     {
-        $audition = $this->getAuditionRecord($id);
+        try {
+            $audition = $this->getAuditionRecord($id);
 
-        if ($audition === null) {
+            if ($audition === null) {
+                return response()->json([
+                    'message' => 'Audition application not found.',
+                ], 404);
+            }
+
             return response()->json([
-                'message' => 'Audition application not found.',
-            ], 404);
+                'data' => $audition,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Failed to fetch audition application.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json([
-            'data' => $audition,
-        ]);
     }
 
     /**
@@ -327,29 +360,35 @@ class AuditionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $existing = $this->getAuditionRecord($id);
-        if ($existing === null) {
-            return response()->json([
-                'message' => 'Audition application not found.',
-            ], 404);
-        }
+        try {
+            $existing = $this->getAuditionRecord($id);
 
-        $validator = Validator::make(
-            array_merge($existing, $request->all()),
-            $this->auditionRules()
-        );
+            if ($existing === null) {
+                return response()->json([
+                    'message' => 'Audition application not found.',
+                ], 404);
+            }
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+            $validator = Validator::make(
+                array_merge($existing, $request->all()),
+                $this->auditionRules()
+            );
 
-        $data = $validator->validated();
-        $now = now();
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Validation failed.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
 
-        DB::transaction(function () use ($id, $data, $now) {
+            $data = $validator->validated();
+            $now = now();
+
+            // Transaction purpose: ensure the main audition record and every
+            // related record are updated as one unit. If any update fails,
+            // all changes made during this update are rolled back.
+            DB::beginTransaction();
+
             DB::table('child_auditions')
                 ->where('id', $id)
                 ->update([
@@ -395,6 +434,7 @@ class AuditionController extends Controller
                 ],
                 $now
             );
+
             $this->updateAuditionRelatedRecord(
                 'child_audition_media',
                 $id,
@@ -411,6 +451,7 @@ class AuditionController extends Controller
                 ...($data['languages'] ?? []),
                 $data['other_language'] ?? null,
             ])));
+
             $this->syncAuditionChoices(
                 'child_languages',
                 'language_name',
@@ -423,6 +464,7 @@ class AuditionController extends Controller
                 ...($data['talents'] ?? []),
                 $data['other_talent'] ?? null,
             ])));
+
             $this->syncAuditionChoices(
                 'child_talents',
                 'talent_type',
@@ -434,8 +476,13 @@ class AuditionController extends Controller
             DB::table('child_medical_conditions')
                 ->where('child_id', $id)
                 ->where('status', 1)
-                ->update(['status' => 0, 'updated_at' => $now]);
+                ->update([
+                    'status' => 0,
+                    'updated_at' => $now,
+                ]);
+
             $conditions = [];
+
             foreach ([
                 'has_medical_condition' => 'Medical condition',
                 'has_allergies' => 'Allergy',
@@ -452,6 +499,7 @@ class AuditionController extends Controller
                     ];
                 }
             }
+
             if ($conditions !== []) {
                 DB::table('child_medical_conditions')->insert($conditions);
             }
@@ -471,32 +519,45 @@ class AuditionController extends Controller
                 ],
                 $now
             );
-        });
 
-        return response()->json([
-            'message' => 'Audition application updated successfully.',
-            'data' => $this->getAuditionRecord($id),
-        ]);
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Audition application updated successfully.',
+                'data' => $this->getAuditionRecord($id),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Failed to update audition application.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     private function getAuditionRecord($id): ?array
     {
         $audition = DB::table('child_auditions')->where('id', $id)->first();
+
         if (! $audition) {
             return null;
         }
 
         $record = (array) $audition;
+
         $parent = DB::table('child_parents')
             ->where('child_id', $id)
             ->where('status', 1)
             ->orderBy('id')
             ->first();
+
         $media = DB::table('child_audition_media')
             ->where('child_id', $id)
             ->where('status', 1)
             ->orderBy('id')
             ->first();
+
         $consent = DB::table('child_consents')
             ->where('child_id', $id)
             ->where('status', 1)
@@ -514,6 +575,7 @@ class AuditionController extends Controller
         ] as $field) {
             $record[$field] = $parent->{$field} ?? $record[$field] ?? null;
         }
+
         foreach ([
             'closeup_photo',
             'full_length_photo',
@@ -522,6 +584,7 @@ class AuditionController extends Controller
         ] as $field) {
             $record[$field] = $media->{$field} ?? $record[$field] ?? null;
         }
+
         foreach ([
             'consent_information',
             'consent_media_use',
@@ -536,16 +599,19 @@ class AuditionController extends Controller
         }
 
         $knownLanguages = ['Marathi', 'Hindi', 'English', 'Other'];
+
         $languages = DB::table('child_languages')
             ->where('child_id', $id)
             ->where('status', 1)
             ->orderBy('id')
             ->pluck('language_name')
             ->all();
+
         $record['languages'] = array_values(array_intersect(
             $languages,
             $knownLanguages
         ));
+
         $record['other_language'] = implode(
             ', ',
             array_diff($languages, $knownLanguages)
@@ -560,20 +626,24 @@ class AuditionController extends Controller
             'Podcast Participation',
             'Other',
         ];
+
         $talents = DB::table('child_talents')
             ->where('child_id', $id)
             ->where('status', 1)
             ->orderBy('id')
             ->pluck('talent_type')
             ->all();
+
         $record['talents'] = array_values(array_intersect(
             $talents,
             $knownTalents
         ));
+
         $record['other_talent'] = implode(
             ', ',
             array_diff($talents, $knownTalents)
         );
+
         $record['medical_details'] = DB::table('child_medical_conditions')
             ->where('child_id', $id)
             ->where('status', 1)
@@ -625,6 +695,7 @@ class AuditionController extends Controller
             static fn ($value) => trim((string) $value),
             $values
         ))));
+
         $activeRecords = DB::table($table)
             ->where('child_id', $childId)
             ->where('status', 1)
@@ -632,6 +703,7 @@ class AuditionController extends Controller
 
         foreach ($activeRecords as $record) {
             $existingIndex = array_search($record->{$column}, $values, true);
+
             if ($existingIndex === false) {
                 DB::table($table)->where('id', $record->id)->update([
                     'status' => 0,
@@ -640,6 +712,7 @@ class AuditionController extends Controller
 
                 continue;
             }
+
             unset($values[$existingIndex]);
         }
 
@@ -663,32 +736,49 @@ class AuditionController extends Controller
             'status' => ['required', 'boolean'],
         ]);
 
-        $updated = DB::table('child_auditions')
-            ->where('id', $id)
-            ->update([
-                'status' => (int) $validated['status'],
-            ]);
+        // Transaction purpose: ensure the status change is completed atomically
+        // and that the database remains unchanged if an exception occurs.
+        try {
+            DB::beginTransaction();
 
-        if ($updated === 0) {
-            $exists = DB::table('child_auditions')
+            $updated = DB::table('child_auditions')
                 ->where('id', $id)
-                ->exists();
+                ->update([
+                    'status' => (int) $validated['status'],
+                ]);
 
-            if (! $exists) {
-                return response()->json([
-                    'message' => 'Audition application not found.',
-                ], 404);
+            if ($updated === 0) {
+                $exists = DB::table('child_auditions')
+                    ->where('id', $id)
+                    ->exists();
+
+                if (! $exists) {
+                    DB::rollBack();
+
+                    return response()->json([
+                        'message' => 'Audition application not found.',
+                    ], 404);
+                }
             }
-        }
 
-        return response()->json([
-            'message' => $validated['status']
-                ? 'Audition activated successfully.'
-                : 'Audition deactivated successfully.',
-            'data' => [
-                'id' => $id,
-                'status' => (int) $validated['status'],
-            ],
-        ]);
+            DB::commit();
+
+            return response()->json([
+                'message' => $validated['status']
+                    ? 'Audition activated successfully.'
+                    : 'Audition deactivated successfully.',
+                'data' => [
+                    'id' => $id,
+                    'status' => (int) $validated['status'],
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Failed to update audition status.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

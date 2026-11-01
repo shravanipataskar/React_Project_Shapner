@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\AdminUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
@@ -19,61 +20,113 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'max:255'],
         ]);
 
-        $query = User::query();
-        $identifier = $credentials['username'];
+        // Transaction purpose: ensure the authentication-related database
+        // operations complete safely as a single unit and can be rolled back
+        // if an unexpected database exception occurs.
+        try {
+            DB::beginTransaction();
 
-        if (Schema::hasColumn('users', 'username')) {
-            $query->where('username', $identifier)
-                ->orWhere('email', $identifier);
-        } else {
-            $query->where('email', $identifier);
-        }
+            $query = User::query();
+            $identifier = $credentials['username'];
 
-        $user = $query->first();
+            if (Schema::hasColumn('users', 'username')) {
+                $query->where('username', $identifier)
+                    ->orWhere('email', $identifier);
+            } else {
+                $query->where('email', $identifier);
+            }
 
-        if (
-            !$user ||
-            !Hash::check($credentials['password'], $user->getAuthPassword()) ||
-            !AdminUser::isActive($user)
-        ) {
+            $user = $query->first();
+
+            if (
+                !$user ||
+                !Hash::check($credentials['password'], $user->getAuthPassword()) ||
+                !AdminUser::isActive($user)
+            ) {
+                DB::rollBack();
+
+                return response()->json([
+                    'message' => 'Invalid username or password.',
+                ], 401);
+            }
+
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
+
+            DB::commit();
+
             return response()->json([
-                'message' => 'Invalid username or password.',
-            ], 401);
+                'success' => true,
+                'user' => $this->userPayload($user),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Unable to login.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
-
-        return response()->json([
-            'success' => true,
-            'user' => $this->userPayload($user),
-        ]);
     }
 
     public function me(Request $request)
     {
-        if (!AdminUser::isActive($request->user())) {
-            return response()->json([
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
+        // Transaction purpose: protect the database read from unexpected
+        // database exceptions while preserving the existing authentication flow.
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'user' => $this->userPayload($request->user()),
-        ]);
+            if (!AdminUser::isActive($request->user())) {
+                DB::rollBack();
+
+                return response()->json([
+                    'message' => 'Unauthenticated.',
+                ], 401);
+            }
+
+            $response = response()->json([
+                'success' => true,
+                'user' => $this->userPayload($request->user()),
+            ]);
+
+            DB::commit();
+
+            return $response;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Unable to retrieve authenticated user.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function logout(Request $request)
     {
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // Transaction purpose: ensure the logout-related authentication
+        // operation is handled safely if an unexpected database exception occurs.
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully.',
-        ]);
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Unable to logout.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     private function userPayload(User $user): array

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\TalentShow;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -42,7 +43,15 @@ class TalentShowController extends Controller
         $data = $validator->validated();
         $videoPath = null;
 
+        /*
+         * Transaction purpose: Ensure the Talent Show application database
+         * record is created atomically. If the database operation fails,
+         * the transaction is rolled back so the record is not partially saved.
+         * The uploaded video is also removed if the transaction fails.
+         */
         try {
+            DB::beginTransaction();
+
             if ($request->hasFile('talent_video')) {
                 $videoPath = $request->file('talent_video')
                     ->store('talent-videos', 'public');
@@ -56,7 +65,11 @@ class TalentShowController extends Controller
                 'declaration_parent_presence' => $data['declaration_parent_presence'] ?? false,
                 'status' => 1,
             ]);
+
+            DB::commit();
         } catch (\Throwable $exception) {
+            DB::rollBack();
+
             if ($videoPath) {
                 Storage::disk('public')->delete($videoPath);
             }
@@ -75,35 +88,39 @@ class TalentShowController extends Controller
      */
     public function index(Request $request)
     {
-        $query = TalentShow::query();
+        try {
+            $query = TalentShow::query();
 
-        // Filter active or inactive applications.
-        if ($request->has('status')) {
-            $status = strtolower($request->query('status'));
+            // Filter active or inactive applications.
+            if ($request->has('status')) {
+                $status = strtolower($request->query('status'));
 
-            if ($status === 'active') {
-                $query->where('status', 1);
-            } elseif ($status === 'inactive') {
-                $query->where('status', 0);
+                if ($status === 'active') {
+                    $query->where('status', 1);
+                } elseif ($status === 'inactive') {
+                    $query->where('status', 0);
+                }
             }
+
+            // Search child name, parent name, age, city and contact number.
+            if ($request->filled('search')) {
+                $search = $request->query('search');
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('child_name', 'like', '%' . $search . '%')
+                        ->orWhere('parent_name', 'like', '%' . $search . '%')
+                        ->orWhere('age', 'like', '%' . $search . '%')
+                        ->orWhere('city', 'like', '%' . $search . '%')
+                        ->orWhere('contact_number', 'like', '%' . $search . '%');
+                });
+            }
+
+            return response()->json(
+                $query->orderBy('id', 'desc')->paginate(10)
+            );
+        } catch (\Throwable $exception) {
+            throw $exception;
         }
-
-        // Search child name, parent name, age, city and contact number.
-        if ($request->filled('search')) {
-            $search = $request->query('search');
-
-            $query->where(function ($q) use ($search) {
-                $q->where('child_name', 'like', '%' . $search . '%')
-                    ->orWhere('parent_name', 'like', '%' . $search . '%')
-                    ->orWhere('age', 'like', '%' . $search . '%')
-                    ->orWhere('city', 'like', '%' . $search . '%')
-                    ->orWhere('contact_number', 'like', '%' . $search . '%');
-            });
-        }
-
-        return response()->json(
-            $query->orderBy('id', 'desc')->paginate(10)
-        );
     }
 
     /**
@@ -111,9 +128,13 @@ class TalentShowController extends Controller
      */
     public function show($id)
     {
-        $application = TalentShow::findOrFail($id);
+        try {
+            $application = TalentShow::findOrFail($id);
 
-        return response()->json($application);
+            return response()->json($application);
+        } catch (\Throwable $exception) {
+            throw $exception;
+        }
     }
 
     /**
@@ -121,45 +142,69 @@ class TalentShowController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $application = TalentShow::findOrFail($id);
+        /*
+         * Transaction purpose: Ensure the Talent Show application update
+         * and its database changes are completed atomically. If any database
+         * operation fails, the transaction is rolled back to preserve the
+         * existing database record.
+         */
+        try {
+            DB::beginTransaction();
 
-        $validator = Validator::make($request->all(), [
-            'child_name' => 'sometimes|required|string|max:255',
-            'parent_name' => 'sometimes|required|string|max:255',
-            'age' => 'sometimes|required|integer|min:0|max:120',
-            'city' => 'sometimes|required|string|max:255',
-            'contact_number' => 'sometimes|required|string|max:255',
-            'what_makes_unique' => 'nullable|string',
-            'talent_description' => 'nullable|string',
-            'talent_video' => 'sometimes|file|mimes:mp4,mov,avi|max:512000',
-            'social_media' => 'nullable|url|max:2048',
-            'declaration_true' => 'sometimes|boolean',
-            'declaration_review' => 'sometimes|boolean',
-            'declaration_parent_presence' => 'sometimes|boolean',
-            'digital_signature' => 'sometimes|required|string|max:255',
-            'signature_date' => 'sometimes|required|date',
-            'status' => 'sometimes|required|in:0,1',
-        ]);
+            $application = TalentShow::findOrFail($id);
 
-        if ($validator->fails()) {
+            $validator = Validator::make($request->all(), [
+                'child_name' => 'sometimes|required|string|max:255',
+                'parent_name' => 'sometimes|required|string|max:255',
+                'age' => 'sometimes|required|integer|min:0|max:120',
+                'city' => 'sometimes|required|string|max:255',
+                'contact_number' => 'sometimes|required|string|max:255',
+                'what_makes_unique' => 'nullable|string',
+                'talent_description' => 'nullable|string',
+                'talent_video' => 'sometimes|file|mimes:mp4,mov,avi|max:512000',
+                'social_media' => 'nullable|url|max:2048',
+                'declaration_true' => 'sometimes|boolean',
+                'declaration_review' => 'sometimes|boolean',
+                'declaration_parent_presence' => 'sometimes|boolean',
+                'digital_signature' => 'sometimes|required|string|max:255',
+                'signature_date' => 'sometimes|required|date',
+                'status' => 'sometimes|required|in:0,1',
+            ]);
+
+            if ($validator->fails()) {
+                DB::rollBack();
+
+                return response()->json([
+                    'message' => 'Validation failed.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $data = $validator->validated();
+            $videoPath = null;
+
+            if ($request->hasFile('talent_video')) {
+                $videoPath = $request->file('talent_video')
+                    ->store('talent-videos', 'public');
+                $data['talent_video'] = $videoPath;
+            }
+
+            $application->update($data);
+
+            DB::commit();
+
             return response()->json([
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors(),
-            ], 422);
+                'message' => 'Talent Show application updated successfully.',
+                'data' => $application->fresh(),
+            ]);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+
+            if (isset($videoPath) && $videoPath) {
+                Storage::disk('public')->delete($videoPath);
+            }
+
+            throw $exception;
         }
-
-        $data = $validator->validated();
-
-        if ($request->hasFile('talent_video')) {
-            $data['talent_video'] = $request->file('talent_video')
-                ->store('talent-videos', 'public');
-        }
-
-        $application->update($data);
-
-        return response()->json([
-            'message' => 'Talent Show application updated successfully.',
-            'data' => $application->fresh(),
-        ]);
     }
 }

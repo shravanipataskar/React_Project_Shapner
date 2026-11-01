@@ -15,26 +15,35 @@ class UserController extends Controller
      */
     public function createOptions()
     {
-        $userTypes = DB::table('user_roles')
-            ->where('status', 1)
-            ->whereNotNull('user_type')
-            ->distinct()
-            ->orderBy('user_type')
-            ->pluck('user_type');
-
-        if ($userTypes->isEmpty()) {
-            $userTypes = DB::table('users')
+        try {
+            $userTypes = DB::table('user_roles')
+                ->where('status', 1)
                 ->whereNotNull('user_type')
                 ->distinct()
                 ->orderBy('user_type')
                 ->pluck('user_type');
-        }
 
-        return response()->json([
-            'data' => [
-                'user_types' => $userTypes,
-            ],
-        ]);
+            if ($userTypes->isEmpty()) {
+                $userTypes = DB::table('users')
+                    ->whereNotNull('user_type')
+                    ->distinct()
+                    ->orderBy('user_type')
+                    ->pluck('user_type');
+            }
+
+            return response()->json([
+                'data' => [
+                    'user_types' => $userTypes,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to fetch user types.',
+                'error' => $e->getMessage(),
+                'data' => [],
+            ], 500);
+        }
     }
 
     /**
@@ -65,45 +74,58 @@ class UserController extends Controller
             'user_type' => ['required', 'string', 'max:255', Rule::in($userTypes->all())],
         ]);
 
-        $roleId = DB::table('user_roles')
-            ->where('status', 1)
-            ->where('user_type', $validated['user_type'])
-            ->value('id');
+        /*
+         * Transaction purpose: Ensure user creation and all related database
+         * operations are completed together or completely rolled back if an exception occurs.
+         */
+        try {
+            DB::beginTransaction();
 
-        $userId = DB::table('users')->insertGetId([
-            'user_role_id' => $roleId,
-            'name' => $validated['name'],
-            'username' => $validated['username'] ?? null,
-            'email' => $validated['email'],
-            'phone_number' => $validated['phone_number'] ?? null,
-            'whatsapp_number' => $validated['whatsapp_number'] ?? null,
-            'password' => Hash::make($validated['password']),
-            'user_type' => $validated['user_type'],
-            'status' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+            $roleId = DB::table('user_roles')
+                ->where('status', 1)
+                ->where('user_type', $validated['user_type'])
+                ->value('id');
 
-        $user = DB::table('users')
-            ->select([
-                'id',
-                'name',
-                'username',
-                'email',
-                'phone_number',
-                'whatsapp_number',
-                'user_type',
-                'status',
-                'created_at',
-            ])
-            ->where('id', $userId)
-            ->first();
+            $userId = DB::table('users')->insertGetId([
+                'user_role_id' => $roleId,
+                'name' => $validated['name'],
+                'username' => $validated['username'] ?? null,
+                'email' => $validated['email'],
+                'phone_number' => $validated['phone_number'] ?? null,
+                'whatsapp_number' => $validated['whatsapp_number'] ?? null,
+                'password' => Hash::make($validated['password']),
+                'user_type' => $validated['user_type'],
+                'status' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User created successfully.',
-            'data' => $user,
-        ], 201);
+            $user = DB::table('users')
+                ->select([
+                    'id',
+                    'name',
+                    'username',
+                    'email',
+                    'phone_number',
+                    'whatsapp_number',
+                    'user_type',
+                    'status',
+                    'created_at',
+                ])
+                ->where('id', $userId)
+                ->first();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User created successfully.',
+                'data' => $user,
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     /**
@@ -111,45 +133,54 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DB::table('users');
+        try {
+            $query = DB::table('users');
 
-        // Active / inactive filter
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('status', (int) $request->status);
+            // Active / inactive filter
+            if ($request->has('status') && $request->status !== '') {
+                $query->where('status', (int) $request->status);
+            }
+
+            // Search by name
+            if ($request->filled('search')) {
+                $search = $request->search;
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%')
+                      ->orWhere('phone_number', 'like', '%' . $search . '%');
+                });
+            }
+
+            $users = $query
+                ->select([
+                    'id',
+                    'name',
+                    'username',
+                    'email',
+                    'phone_number',
+                    'whatsapp_number',
+                    'user_type',
+                    'status',
+                    'created_at',
+                    'updated_at',
+                ])
+                ->orderByDesc('id')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Users fetched successfully.',
+                'data' => $users,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to fetch users.',
+                'error' => $e->getMessage(),
+                'data' => [],
+            ], 500);
         }
-
-        // Search by name
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%')
-                  ->orWhere('phone_number', 'like', '%' . $search . '%');
-            });
-        }
-
-        $users = $query
-            ->select([
-                'id',
-                'name',
-                'username',
-                'email',
-                'phone_number',
-                'whatsapp_number',
-                'user_type',
-                'status',
-                'created_at',
-                'updated_at',
-            ])
-            ->orderByDesc('id')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Users fetched successfully.',
-            'data' => $users,
-        ]);
     }
 
     /**
@@ -157,34 +188,43 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = DB::table('users')
-            ->select([
-                'id',
-                'name',
-                'username',
-                'email',
-                'phone_number',
-                'whatsapp_number',
-                'user_type',
-                'status',
-                'created_at',
-                'updated_at',
-            ])
-            ->where('id', $id)
-            ->first();
+        try {
+            $user = DB::table('users')
+                ->select([
+                    'id',
+                    'name',
+                    'username',
+                    'email',
+                    'phone_number',
+                    'whatsapp_number',
+                    'user_type',
+                    'status',
+                    'created_at',
+                    'updated_at',
+                ])
+                ->where('id', $id)
+                ->first();
 
-        if (!$user) {
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User fetched successfully.',
+                'data' => $user,
+            ]);
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not found.',
-            ], 404);
+                'message' => 'Unable to fetch user.',
+                'error' => $e->getMessage(),
+                'data' => null,
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User fetched successfully.',
-            'data' => $user,
-        ]);
     }
 
     /**
@@ -235,50 +275,63 @@ class UserController extends Controller
             'status' => ['required', 'boolean'],
         ]);
 
-        $roleId = DB::table('user_roles')
-            ->where('status', 1)
-            ->where('user_type', $validated['user_type'])
-            ->value('id');
+        /*
+         * Transaction purpose: Ensure all user updates, including role/status
+         * and optional password changes, are committed together or rolled back together.
+         */
+        try {
+            DB::beginTransaction();
 
-        $updates = [
-            'user_role_id' => $roleId,
-            'name' => $validated['name'],
-            'username' => $validated['username'] ?? null,
-            'email' => $validated['email'],
-            'phone_number' => $validated['phone_number'] ?? null,
-            'whatsapp_number' => $validated['whatsapp_number'] ?? null,
-            'user_type' => $validated['user_type'],
-            'status' => $request->boolean('status') ? 1 : 0,
-            'updated_at' => now(),
-        ];
+            $roleId = DB::table('user_roles')
+                ->where('status', 1)
+                ->where('user_type', $validated['user_type'])
+                ->value('id');
 
-        if (!empty($validated['password'])) {
-            $updates['password'] = Hash::make($validated['password']);
+            $updates = [
+                'user_role_id' => $roleId,
+                'name' => $validated['name'],
+                'username' => $validated['username'] ?? null,
+                'email' => $validated['email'],
+                'phone_number' => $validated['phone_number'] ?? null,
+                'whatsapp_number' => $validated['whatsapp_number'] ?? null,
+                'user_type' => $validated['user_type'],
+                'status' => $request->boolean('status') ? 1 : 0,
+                'updated_at' => now(),
+            ];
+
+            if (!empty($validated['password'])) {
+                $updates['password'] = Hash::make($validated['password']);
+            }
+
+            DB::table('users')->where('id', $id)->update($updates);
+
+            $updatedUser = DB::table('users')
+                ->select([
+                    'id',
+                    'name',
+                    'username',
+                    'email',
+                    'phone_number',
+                    'whatsapp_number',
+                    'user_type',
+                    'status',
+                    'created_at',
+                    'updated_at',
+                ])
+                ->where('id', $id)
+                ->first();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User updated successfully.',
+                'data' => $updatedUser,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
-
-        DB::table('users')->where('id', $id)->update($updates);
-
-        $updatedUser = DB::table('users')
-            ->select([
-                'id',
-                'name',
-                'username',
-                'email',
-                'phone_number',
-                'whatsapp_number',
-                'user_type',
-                'status',
-                'created_at',
-                'updated_at',
-            ])
-            ->where('id', $id)
-            ->first();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User updated successfully.',
-            'data' => $updatedUser,
-        ]);
     }
 
     /**
@@ -301,16 +354,29 @@ class UserController extends Controller
             'status' => ['required', 'boolean'],
         ]);
 
-        DB::table('users')
-            ->where('id', $id)
-            ->update([
-                'status' => $request->boolean('status') ? 1 : 0,
-                'updated_at' => now(),
-            ]);
+        /*
+         * Transaction purpose: Ensure the user's status change is committed
+         * atomically and rolled back if the database update fails.
+         */
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User status updated successfully.',
-        ]);
+            DB::table('users')
+                ->where('id', $id)
+                ->update([
+                    'status' => $request->boolean('status') ? 1 : 0,
+                    'updated_at' => now(),
+                ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User status updated successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Video;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -18,56 +19,68 @@ class VideoController extends Controller
      */
     public function index(Request $request)
     {
-        return $this->videosResponse($request, false);
+        try {
+            return $this->videosResponse($request, false);
+        } catch (\Throwable $e) {
+            throw $e;
+        }
     }
 
     public function adminIndex(Request $request)
     {
-        return $this->videosResponse($request, true);
+        try {
+            return $this->videosResponse($request, true);
+        } catch (\Throwable $e) {
+            throw $e;
+        }
     }
 
     private function videosResponse(Request $request, bool $allowStatusFilter)
     {
-        $query = Video::query();
+        try {
+            $query = Video::query();
 
-        // Filter by type: video or short.
-        if ($request->filled('type')) {
-            $request->validate([
-                'type' => ['required', Rule::in(['video', 'short'])],
-            ]);
+            // Filter by type: video or short.
+            if ($request->filled('type')) {
+                $request->validate([
+                    'type' => ['required', Rule::in(['video', 'short'])],
+                ]);
 
-            $query->where('type', $request->type);
+                $query->where('type', $request->type);
+            }
+
+            // Filter by platform: YouTube or Instagram.
+            if ($request->filled('platform')) {
+                $request->validate([
+                    'platform' => [
+                        'required',
+                        Rule::in(['youtube', 'instagram']),
+                    ],
+                ]);
+
+                $query->where('platform', $request->platform);
+            }
+
+            // Show only active videos unless status is explicitly supplied.
+            if ($allowStatusFilter && $request->filled('status')) {
+                $request->validate([
+                    'status' => ['required', 'boolean'],
+                ]);
+
+                $query->where('status', $request->boolean('status'));
+            } else {
+                $query->where('status', 1);
+            }
+
+            $videos = $query
+                ->orderBy('display_order')
+                ->orderByDesc('id')
+                ->paginate(12);
+
+            return response()->json($videos);
+        } catch (\Throwable $e) {
+            throw $e;
         }
-
-        // Filter by platform: YouTube or Instagram.
-        if ($request->filled('platform')) {
-            $request->validate([
-                'platform' => [
-                    'required',
-                    Rule::in(['youtube', 'instagram']),
-                ],
-            ]);
-
-            $query->where('platform', $request->platform);
-        }
-
-        // Show only active videos unless status is explicitly supplied.
-        if ($allowStatusFilter && $request->filled('status')) {
-            $request->validate([
-                'status' => ['required', 'boolean'],
-            ]);
-
-            $query->where('status', $request->boolean('status'));
-        } else {
-            $query->where('status', 1);
-        }
-
-        $videos = $query
-            ->orderBy('display_order')
-            ->orderByDesc('id')
-            ->paginate(12);
-
-        return response()->json($videos);
     }
 
     /**
@@ -77,9 +90,13 @@ class VideoController extends Controller
      */
     public function show($id)
     {
-        $video = Video::findOrFail($id);
+        try {
+            $video = Video::findOrFail($id);
 
-        return response()->json($video);
+            return response()->json($video);
+        } catch (\Throwable $e) {
+            throw $e;
+        }
     }
 
     /**
@@ -114,12 +131,25 @@ class VideoController extends Controller
             );
         }
 
-        $video = Video::create($validated);
+        /*
+         * Transaction purpose: Ensure the video creation is completed atomically
+         * so the database change is fully committed or rolled back if an exception occurs.
+         */
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'message' => 'Video created successfully.',
-            'data' => $video,
-        ], 201);
+            $video = Video::create($validated);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Video created successfully.',
+                'data' => $video,
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     /**
@@ -129,44 +159,59 @@ class VideoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $video = Video::findOrFail($id);
+        try {
+            $video = Video::findOrFail($id);
 
-        $validated = $request->validate([
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'video_url' => ['sometimes', 'required', 'url:http,https'],
-            'video_id' => ['sometimes', 'required', 'string', 'max:255'],
-            'platform' => [
-                'sometimes',
-                'required',
-                Rule::in(['youtube', 'instagram']),
-            ],
-            'type' => [
-                'sometimes',
-                'required',
-                Rule::in(['video', 'short']),
-            ],
-            'thumbnail' => ['sometimes', 'nullable', 'string'],
-            'display_order' => ['sometimes', 'integer', 'min:0'],
-            'status' => ['sometimes', 'boolean'],
-            'updated_by_id' => ['sometimes', 'nullable', 'integer'],
-        ]);
+            $validated = $request->validate([
+                'title' => ['sometimes', 'required', 'string', 'max:255'],
+                'video_url' => ['sometimes', 'required', 'url:http,https'],
+                'video_id' => ['sometimes', 'required', 'string', 'max:255'],
+                'platform' => [
+                    'sometimes',
+                    'required',
+                    Rule::in(['youtube', 'instagram']),
+                ],
+                'type' => [
+                    'sometimes',
+                    'required',
+                    Rule::in(['video', 'short']),
+                ],
+                'thumbnail' => ['sometimes', 'nullable', 'string'],
+                'display_order' => ['sometimes', 'integer', 'min:0'],
+                'status' => ['sometimes', 'boolean'],
+                'updated_by_id' => ['sometimes', 'nullable', 'integer'],
+            ]);
 
-        if (
-            ($validated['platform'] ?? $video->platform) === 'youtube' &&
-            array_key_exists('video_url', $validated)
-        ) {
-            $validated['title'] = $this->youtubeTitleOrFallback(
-                $this->fetchYouTubeTitle($validated['video_url']),
-                $validated['title'] ?? $video->title,
-            );
+            if (
+                ($validated['platform'] ?? $video->platform) === 'youtube' &&
+                array_key_exists('video_url', $validated)
+            ) {
+                $validated['title'] = $this->youtubeTitleOrFallback(
+                    $this->fetchYouTubeTitle($validated['video_url']),
+                    $validated['title'] ?? $video->title,
+                );
+            }
+
+            /*
+             * Transaction purpose: Ensure the video update is completed atomically
+             * so all database changes are committed together or rolled back on exception.
+             */
+            DB::beginTransaction();
+
+            $video->update($validated);
+
+            $updatedVideo = $video->fresh();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Video updated successfully.',
+                'data' => $updatedVideo,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
-
-        $video->update($validated);
-
-        return response()->json([
-            'message' => 'Video updated successfully.',
-            'data' => $video->fresh(),
-        ]);
     }
 
     /**
@@ -176,18 +221,32 @@ class VideoController extends Controller
      */
     public function destroy($id)
     {
-        $video = Video::findOrFail($id);
+        try {
+            $video = Video::findOrFail($id);
 
-        $video->delete();
+            /*
+             * Transaction purpose: Ensure the video deletion is committed atomically
+             * and rolled back if the database deletion fails.
+             */
+            DB::beginTransaction();
 
-        return response()->json([
-            'message' => 'Video deleted successfully.',
-        ]);
+            $video->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Video deleted successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     private function fetchYouTubeTitle(string $videoUrl): ?string
     {
         $host = strtolower((string) parse_url($videoUrl, PHP_URL_HOST));
+
         if (! in_array($host, ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'], true)) {
             return null;
         }
@@ -217,6 +276,7 @@ class VideoController extends Controller
     private function youtubeTitleOrFallback(?string $title, ?string $fallback): string
     {
         $title = trim((string) $title);
+
         if ($title !== '') {
             return $title;
         }

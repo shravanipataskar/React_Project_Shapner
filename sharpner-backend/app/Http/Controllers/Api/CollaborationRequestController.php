@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CollaborationRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CollaborationRequestController extends Controller
 {
@@ -30,17 +31,32 @@ class CollaborationRequestController extends Controller
             'review_status' => ['sometimes', 'integer', 'in:0,1,2'],
         ]);
 
-        $collaboration = CollaborationRequest::create([
-            ...$validated,
-            'status' => 1,
-            'review_status' => $validated['review_status'] ?? 0,
-        ]);
+        /*
+         * Transaction purpose: Ensure the Brand Deal creation is completed
+         * atomically. If the database operation fails, all changes made
+         * within this transaction are rolled back.
+         */
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Brand Deal created successfully.',
-            'data' => $collaboration,
-        ], 201);
+            $collaboration = CollaborationRequest::create([
+                ...$validated,
+                'status' => 1,
+                'review_status' => $validated['review_status'] ?? 0,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Brand Deal created successfully.',
+                'data' => $collaboration,
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
+        }
     }
 
     /**
@@ -48,52 +64,56 @@ class CollaborationRequestController extends Controller
      */
     public function index(Request $request)
     {
-        $query = CollaborationRequest::query();
+        try {
+            $query = CollaborationRequest::query();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Brand Deals
-        |--------------------------------------------------------------------------
-        | This page is "Manage Brand Deals", so we only show requests where
-        | collaboration_type = brand.
-        |--------------------------------------------------------------------------
-        */
-        $query->where('collaboration_type', 'brand');
+            /*
+            |--------------------------------------------------------------------------
+            | Brand Deals
+            |--------------------------------------------------------------------------
+            | This page is "Manage Brand Deals", so we only show requests where
+            | collaboration_type = brand.
+            |--------------------------------------------------------------------------
+            */
+            $query->where('collaboration_type', 'brand');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Active / Inactive
-        |--------------------------------------------------------------------------
-        */
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('status', $request->status);
+            /*
+            |--------------------------------------------------------------------------
+            | Active / Inactive
+            |--------------------------------------------------------------------------
+            */
+            if ($request->has('status') && $request->status !== '') {
+                $query->where('status', $request->status);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Search
+            |--------------------------------------------------------------------------
+            */
+            if ($request->filled('search')) {
+                $search = $request->search;
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('brand_name', 'like', "%{$search}%")
+                        ->orWhere('contact_person', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%");
+                });
+            }
+
+            $collaborations = $query
+                ->orderBy('id', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Collaboration requests fetched successfully.',
+                'data' => $collaborations,
+            ]);
+        } catch (\Throwable $e) {
+            throw $e;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Search
-        |--------------------------------------------------------------------------
-        */
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-                $q->where('brand_name', 'like', "%{$search}%")
-                    ->orWhere('contact_person', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%");
-            });
-        }
-
-        $collaborations = $query
-            ->orderBy('id', 'desc')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Collaboration requests fetched successfully.',
-            'data' => $collaborations,
-        ]);
     }
 
     /**
@@ -101,20 +121,24 @@ class CollaborationRequestController extends Controller
      */
     public function show($id)
     {
-        $collaboration = CollaborationRequest::find($id);
+        try {
+            $collaboration = CollaborationRequest::find($id);
 
-        if (!$collaboration) {
+            if (!$collaboration) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Collaboration request not found.',
+                ], 404);
+            }
+
             return response()->json([
-                'success' => false,
-                'message' => 'Collaboration request not found.',
-            ], 404);
+                'success' => true,
+                'message' => 'Collaboration request fetched successfully.',
+                'data' => $collaboration,
+            ]);
+        } catch (\Throwable $e) {
+            throw $e;
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Collaboration request fetched successfully.',
-            'data' => $collaboration,
-        ]);
     }
 
     /**
@@ -139,23 +163,40 @@ class CollaborationRequestController extends Controller
             'review_status' => ['required', 'integer', 'in:0,1,2'],
         ]);
 
-        $collaboration = CollaborationRequest::find($id);
+        /*
+         * Transaction purpose: Ensure all changes to the Brand Deal are
+         * committed together. If the update fails, the database changes
+         * are rolled back to preserve the previous record state.
+         */
+        try {
+            DB::beginTransaction();
 
-        if (!$collaboration) {
+            $collaboration = CollaborationRequest::find($id);
+
+            if (!$collaboration) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Collaboration request not found.',
+                ], 404);
+            }
+
+            $collaboration->fill($validated);
+            $collaboration->save();
+
+            DB::commit();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Collaboration request not found.',
-            ], 404);
+                'success' => true,
+                'message' => 'Brand Deal updated successfully.',
+                'data' => $collaboration,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
         }
-
-        $collaboration->fill($validated);
-        $collaboration->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Brand Deal updated successfully.',
-            'data' => $collaboration,
-        ]);
     }
 
     /**
@@ -163,27 +204,44 @@ class CollaborationRequestController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
-        $collaboration = CollaborationRequest::find($id);
+        /*
+         * Transaction purpose: Ensure the status update is completed as
+         * one atomic database operation. If saving the updated status
+         * fails, the transaction is rolled back.
+         */
+        try {
+            DB::beginTransaction();
 
-        if (!$collaboration) {
+            $collaboration = CollaborationRequest::find($id);
+
+            if (!$collaboration) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Collaboration request not found.',
+                ], 404);
+            }
+
+            $request->validate([
+                'status' => 'required|in:0,1',
+            ]);
+
+            $collaboration->status = (int) $request->status;
+            $collaboration->save();
+
+            DB::commit();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Collaboration request not found.',
-            ], 404);
+                'success' => true,
+                'message' => 'Status updated successfully.',
+                'data' => $collaboration,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
         }
-
-        $request->validate([
-            'status' => 'required|in:0,1',
-        ]);
-
-        $collaboration->status = (int) $request->status;
-        $collaboration->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Status updated successfully.',
-            'data' => $collaboration,
-        ]);
     }
 
     /**
@@ -191,26 +249,43 @@ class CollaborationRequestController extends Controller
      */
     public function updateReviewStatus(Request $request, $id)
     {
-        $collaboration = CollaborationRequest::find($id);
+        /*
+         * Transaction purpose: Ensure the review status change is completed
+         * atomically. If the database update fails, the transaction is
+         * rolled back so the existing review status remains unchanged.
+         */
+        try {
+            DB::beginTransaction();
 
-        if (!$collaboration) {
+            $collaboration = CollaborationRequest::find($id);
+
+            if (!$collaboration) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Collaboration request not found.',
+                ], 404);
+            }
+
+            $request->validate([
+                'review_status' => 'required|integer',
+            ]);
+
+            $collaboration->review_status = (int) $request->review_status;
+            $collaboration->save();
+
+            DB::commit();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Collaboration request not found.',
-            ], 404);
+                'success' => true,
+                'message' => 'Review status updated successfully.',
+                'data' => $collaboration,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
         }
-
-        $request->validate([
-            'review_status' => 'required|integer',
-        ]);
-
-        $collaboration->review_status = (int) $request->review_status;
-        $collaboration->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Review status updated successfully.',
-            'data' => $collaboration,
-        ]);
     }
 }
